@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-cluster -vm -all -debug -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Execute the specified command in the specified VMs except this VM
+                 by default in geode-addon environment
+
+SYNOPSIS
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-all] [-debug] "<commands>" [-?]
+
+   Executes the specified command in the specified VMs. By default, the VM in 
+   which this command executes is not included. To include t, specify the '-all' option.
+ 
+   If the '-vm' option is not specified, then it executes the command in the
+   hosts defined by the 'vm.locator.hosts' and 'vm.hosts' properties in the
+   etc/cluster.properties file.
+
+OPTIONS
+   -cluster cluster_name
+             Cluster name.
+
+   -vm comma_separated_hosts
+             A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+
+   -all
+             Execute the command on all VMs including this VM. If not specified
+             then the command will not executed on this VM.
+
+   -debug
+             Print the remote command but do not execute.
+
+   "commands"
+             Remote commands separated by ';'. Commands should be in double quotes.
+
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+DEFAULT
+   $EXECUTABLE -cluster $CLUSTER "commands"
+
+EOF
+fi
+cat <<EOF
+SEE ALSO
+EOF
+   printSeeAlsoList "vm_*" $EXECUTABLE
+   exit
+fi
+
+# 
+# VM cluster
+#
+if [ "$VM_HOSTS" == "" ]; then
+   VM_HOSTS=$(getAllMergedVmHosts)
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   if [ "$VM_HOSTS" == "" ]; then
+      echo >&2 "    ERROR: You must specify the '-vm' option or set at least one of the 'vm.locator.hosts' and"
+      echo >&2 "           'vm.hosts' properties in etc/cluster.properties. Command aborted."
+      exit 1
+   else
+      echo "     INFO: The '-vm' option undefined. Using the following VM locator and member hosts found"
+      echo "           in etc/cluster.properties."
+      echo "           $VM_HOSTS"
+   fi
+   echo "----------------------------------------------------------------"
+fi
+
+#
+# Reconstruct command
+#
+COMMAND=
+PREV_VAL=
+for i in $*
+do
+   if [[ "$i" == "${CLUSTER}" ]]; then
+       if [ -z $CLUSTER_SPECIFIED ]; then
+          COMMAND="$COMMAND $i"
+       fi
+   elif [[ "$i" != "-cluster" ]]  && [[ "$i" != "-vm" ]]  && [[ "$i" != "-all" ]] && [[ "$i" != "-debug" ]]; then
+      if [ "$PREV_VAL" != "-vm" ]; then
+         COMMAND="$COMMAND $i"
+      fi
+   fi
+   PREV_VAL=$i
+done
+
+# Replace , with space
+__VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
+DEFAULT_USER=$(whoami)
+VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
+VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+if [ "$VM_KEY" != "" ]; then 
+   VM_KEY="-i $VM_KEY"
+fi
+THIS_VM_HOSTNAME=`hostname`
+for VM_HOST in $__VM_HOSTS; do
+     HOST_NAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "hostname"`
+     if [ "$ALL" != "true" ] && [ "$HOST_NAME" == "$THIS_VM_HOSTNAME" ]; then
+        continue
+     fi
+
+     echo "---------- $VM_HOST ----------"
+     echo
+     if [ "$DEBUG" == "true" ]; then
+         echo "ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND"
+     fi
+     ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND
+     echo ""
+done

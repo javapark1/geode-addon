@@ -1,0 +1,126 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-tree -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+NAME
+   $EXECUTABLE - List all workspaces in the current geode-addon workspaces environment
+
+SYNOPSIS
+   $EXECUTABLE [-tree] [-?]
+
+DESCRIPTION
+   Lists all workspaces. If the '-tree' option is present then it list all
+   workspaces and their constituents along with version information in a tree view.
+
+OPTIONS
+   -tree
+             If specified then displays workspaces and their consitituents in
+             a tree view.
+
+DEFAULT
+   $EXECUTABLE
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*workspace*" $EXECUTABLE
+   exit
+fi
+
+if [ "$GEODE_ADDON_WORKSPACES_HOME" == "" ]; then
+   echo "ERROR: Workspaces not initialized. Please first run 'init_addon' to initialize workspaces."
+   echo "       Command aborted."
+   exit 1
+fi
+if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME" ]; then
+   echo "ERROR: Invalid workspaces. Please run 'init_addon' to initialize workspaces."
+   echo "       Command aborted."
+   exit 1
+fi
+
+if [ "$TREE" == "false" ]; then
+echo ""
+echo "Workspaces Home:"
+echo "   $GEODE_ADDON_WORKSPACES_HOME"
+echo ""
+WORKSPACES=`ls $GEODE_ADDON_WORKSPACES_HOME`
+removeTokens "$WORKSPACES" "initenv.sh setenv.sh"
+echo ""
+
+else
+
+function displayTreeNode
+{
+   TOP_NODE=$1
+   if [ -d "$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/$TOP_NODE" ]; then
+      ITEMS=`ls $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/$TOP_NODE`
+      ITEMS=$(removeTokens "$ITEMS" "initenv.sh setenv.sh")
+      ITEMS=( $ITEMS )
+      let LAST_INDEX=${#ITEMS[@]}-1
+      if [ "$TOP_NODE" == "pods" ]; then
+         if [ $LAST_INDEX -ge 0 ]; then
+         echo "$LEADING_BAR   ├── $TOP_NODE"
+         else
+         echo "$LEADING_BAR   └── $TOP_NODE"
+         fi
+      else
+         echo "$LEADING_BAR   ├── $TOP_NODE"
+      fi
+      for ((i = 0; i < ${#ITEMS[@]}; i++)); do
+         if [ $i -lt $LAST_INDEX ]; then
+         echo "$LEADING_BAR   │   ├── ${ITEMS[$i]}"
+         else
+         echo "$LEADING_BAR   │   └── ${ITEMS[$i]}"
+         fi
+      done
+   fi
+}
+
+echo ""
+echo "$GEODE_ADDON_WORKSPACES_HOME"
+WORKSPACES=`ls $GEODE_ADDON_WORKSPACES_HOME`
+WORKSPACES=$(removeTokens "$WORKSPACES" "initenv.sh setenv.sh")
+WORKSPACES=( $WORKSPACES )
+let WORKSPACES_LAST_INDEX=${#WORKSPACES[@]}-1
+for ((j = 0; j < ${#WORKSPACES[@]}; j++)); do
+   WORKSPACE=${WORKSPACES[$j]}
+   GEODE_VERSION=$(grep "GEODE_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
+   GEODE_VERSION=$(echo "$GEODE_VERSION" | sed -e 's/^.*pivotal-gemfire-//' -e 's/"//')
+   if [ "$GEODE_VERSION" == "" ]; then
+      GEODE_VERSION=$(echo "$GEODE_VERSION" | sed -e 's/^.*apache-geode-//' -e 's/"//')
+      CLUSTER_TYPE="geode"
+   else
+      CLUSTER_TYPE="gemfire"
+   fi
+
+   GEODE_ADDON_VERSION=$(grep "GEODE_ADDON_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
+   GEODE_ADDON_VERSION=$(echo "$GEODE_ADDON_VERSION" | sed -e 's/^.*geode-addon_//' -e 's/"//')
+   if [ $j -lt $WORKSPACES_LAST_INDEX ]; then
+      echo "├── $WORKSPACE (${CLUSTER_TYPE}_${GEODE_VERSION}, geode-addon_$GEODE_ADDON_VERSION)"
+      LEADING_BAR="│"
+   else
+      echo "└── $WORKSPACE (${CLUSTER_TYPE}_${GEODE_VERSION}, geode-addon_$GEODE_ADDON_VERSION)"
+      LEADING_BAR=" "
+   fi
+   displayTreeNode "apps"
+   displayTreeNode "clusters"
+   displayTreeNode "k8s"
+   displayTreeNode "pods"
+done
+echo ""
+fi

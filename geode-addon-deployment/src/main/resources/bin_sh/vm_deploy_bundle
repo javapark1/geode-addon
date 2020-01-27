@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-cluster -vm -quiet -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+#
+# Determeint $TAR_BALL_PATH
+#
+ROOT_DIR_NAME=$(basename $BASE_DIR)
+TOP_DIR="$(dirname "$BASE_DIR")"
+TAR_BALL_GZ_NAME=$ROOT_DIR_NAME.tar.gz
+TAR_BALL_GZ_PATH=$BASE_DIR/bundle/$TAR_BALL_GZ_NAME
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Deploy the specified bundle file to the specified VMs in
+                 geode-addon environment
+
+SYNOPSIS
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-quiet] [-?] bundle_file
+
+DESCRIPTION
+   Deploys the specified bundle file to the specified VMs. The VMs must have
+   this version of geode-addon already installed in the same path. (To install
+   geode-addon on other VMs, use 'vm_copy' and 'vm_exec'.)
+ 
+   If the '-vm' option is not specified, then it deploys to the hosts defined
+   by the 'vm.locator.hosts' and 'vm.hosts' properties in the etc/cluster.properties file.
+
+OPTIONS
+   -cluster cluster_name
+             Unique cluster name. The cluster name is prepended to all member names.
+
+   -vm comma_separated_hosts
+             A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+
+   -quiet
+             Quiet mode. Supresses all interactive prompts.
+
+   bundle_file
+             Bundle file to deploy.
+
+CAUTION
+   The -quiet option overwrites existing installations if any.
+
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+DEFAULT
+   $EXECUTABLE -cluster $CLUSTER bundle_file
+EOF
+fi
+cat <<EOF
+
+SEE ALSO
+EOF
+   printSeeAlsoList "vm_*" $EXECUTABLE
+   exit
+fi
+
+
+BUNDLE_FILE_PATH=${@: -1}
+if [ ! -f "$BUNDLE_FILE_PATH" ]; then
+   echo "ERROR: Invalid bundle file path. Command aborted."
+   exit 1
+fi
+
+# 
+# VM cluster
+#
+VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+if [ "$VM_ENABLED" != "true" ]; then
+   echo "ERROR: The specified cluster is not a VM cluster [$CLUSTER]. Command aborted."
+   exit 1 
+fi
+
+if [ "$VM_HOSTS" == "" ]; then
+   VM_HOSTS=$(getAllMergedVmHosts)
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   if [ "$VM_HOSTS" == "" ]; then
+      echo >&2 "    ERROR: You must specify the '-vm' option or set at least one of the 'vm.locator.hosts' and"
+      echo >&2 "           'vm.hosts' properties in etc/cluster.properties. Command aborted."
+      exit 1
+   else
+      echo "     INFO: The '-vm' option undefined. Using the following VM locator and member hosts found"
+      echo "           in etc/cluster.properties."
+      echo "           $VM_HOSTS"
+   fi
+   echo "----------------------------------------------------------------"
+fi
+
+# Replace , with space
+__VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
+DEFAULT_USER=$(whoami)
+VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
+VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+if [ "$VM_KEY" != "" ]; then 
+   VM_KEY="-i $VM_KEY"
+fi
+
+# Find all existing and new hosts
+EXISTING_HOSTS=
+NEW_HOSTS=
+THIS_VM_HOSTNAME=`hostname`
+COMMAND="if [ -d "$BASE_DIR" ]; then echo true; else echo false; fi"
+EXISTING_HOST_COUNT=0
+NEW_HOST_COUNT=0
+for VM_HOST in $__VM_HOSTS; do
+   HOST_NAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+   if [ "$HOST_NAME" == "$THIS_VM_HOSTNAME" ]; then
+      continue
+   fi
+   DIR_EXISTS=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND`
+   if [ "$DIR_EXISTS" == "true" ]; then
+      EXISTING_HOSTS="$EXISTING_HOSTS $VM_HOST"
+      let EXISTING_HOST_COUNT=EXISTING_HOST_COUNT+1
+   else
+      NEW_HOSTS="$NEW_HOSTS $VM_HOST"
+      let NEW_HOST_COUNT=NEW_HOST_COUNT+1
+   fi
+done
+
+echo ""
+echo "geode-addon installation found in the following host(s):"
+echo "   $EXISTING_HOSTS"
+echo ""
+echo "geode-addon not found in the following host(s) (these hosts will be ignored):"
+echo "   $NEW_HOSTS"
+echo ""
+DEPLOYMENT_HOST_COUNT=$EXISTING_HOST_COUNT
+INPUT=
+if [ "$QUIET" == "false" ]; then
+   echo "Do you want to continue?"
+   echo "('continue' + Enter to continue deployment, other keys to quit.)"
+   read INPUT
+   echo ""
+fi
+
+if [ $DEPLOYMENT_HOST_COUNT -eq 0 ]; then
+   echo "No qualified hosts. Command aborted." 
+   echo ""
+   exit
+fi
+
+echo "Total deployment host count: $DEPLOYMENT_HOST_COUNT"
+
+BUNDLE_FILE_PATH=${@: -1}
+BUNDLE_FILE_DIR="$(dirname "$BUNDLE_FILE_PATH")"
+BUNDLE_FILE="$(basename "$BUNDLE_FILE_PATH")"
+
+if [ "$EXISTING_HOSTS" != "" ]; then
+   echo "Existing Hosts:"
+   for VM_HOST in $EXISTING_HOSTS; do
+      echo "   Deploying to $VM_HOST..."
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $BASE_DIR/bundle"
+      scp -q $VM_KEY $BUNDLE_FILE_PATH $VM_USER@$VM_HOST:$BASE_DIR/bundle
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $BASE_DIR -xzf $BASE_DIR/bundle/$BUNDLE_FILE"
+   done
+fi
+
+echo "Deployment complete."
+echo ""

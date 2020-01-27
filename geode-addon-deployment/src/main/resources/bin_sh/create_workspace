@@ -1,0 +1,444 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-name -workspace -cluster -geode -java -vm -quiet -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Create a geode-addon workspace environment
+
+SYNOPSIS
+   $EXECUTABLE [-name workspace_name] | [-workspace workspace_directory_path]
+               [-cluster default_cluster ]
+               [-java JAVA_HOME_path]
+               [-geode geode_path]
+               [-vm]
+               [-quiet] [-?]
+
+DESCRIPTION
+   Creates a geode-addon workspace environment where you can run geode-addon
+   and your applications.
+
+OPTIONS
+   -name workspace_name
+             Workspace name. All of your workspace changes will be stored under
+             this name. Use this option if the workspaces have been intialized
+             by executing init_addon.
+
+   -cluster default_cluster
+              Default cluster name.
+              Default: mygeode
+
+   -workspace workspace_directory_path
+              DEPRECATED. This option will be removed in the next minor release.
+              Please use the '-name' option instead.
+              Workspace directory path where all of your changes will be stored.
+              For VM clusters, this directory path will be automatically created
+              in all VMs if it does not exist.
+
+   -java JAVA_HOME_path
+              JDK home path.
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+              Default: $JAVA_HOME
+EOF
+fi
+cat <<EOF
+
+   -geode geode_path
+              Geode installation directory path.
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+              Default: $GEODE_HOME
+EOF
+fi
+cat <<EOF
+
+   -vm        Specify '-vm' to enable VM cluster.
+
+DEFAULT
+   $EXECUTABLE
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*workspace*" $EXECUTABLE
+   exit
+fi
+
+WORKSPACE_DIR=$WORKSPACE_ARG
+
+if [ "$WORKSPACE_DIR" != "" ]; then
+   echo ""
+   if [ "$GEODE_ADDON_WORKSPACES_HOME" != "" ]; then
+      echo "NOTE:"
+      echo "----------------------------------------------------------------------------"
+      echo "The specified '-workspace' option will be ignored. You have already"
+      echo "intialized workspaces and this option has been deprecated."
+      echo "----------------------------------------------------------------------------"
+   else
+      echo "WARNING:"
+      echo "----------------------------------------------------------------------------"
+      echo "The '-workspace' option is deprecated and will be removed in the next minor."
+      echo "release. Please use the '-name' option instead. The workspace created using"
+      echo "this option may not be compatible with the future geode-addon releases."
+      echo "----------------------------------------------------------------------------"
+   fi
+fi
+
+if [ "$GEODE_ADDON_WORKSPACES_HOME" == "" ] || [ ! -d $GEODE_ADDON_WORKSPACES_HOME ]; then
+   if [ "$WORKSPACE_DIR" == "" ]; then
+      echo "----------------------------------------------------------------"
+      echo "ERROR: Workspace directory path not specified. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+fi
+
+# Remove trailing slashes ('/')
+WORKSPACE_DIR=$(echo "$WORKSPACE_DIR" | sed 's:/*$::')
+
+if [ "$NAME_ARG" != "" ] && [ "$GEODE_ADDON_WORKSPACES_HOME" != "" ] && "$QUIET" == "true" ]; then
+   WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$NAME_ARG
+fi
+if [ -d "$WORKSPACE_DIR" ]; then
+   if [ "$QUIET" == "true" ]; then
+      echo "ERROR: The specified workspace directory already exists. A new directory required."
+      echo "       Command aborted."
+      exit 1
+    else
+      echo "The specified workspace directory already exists. Files may be overwritten."
+      echo "Do you want to continue?"
+      echo "(Enter 'continue' + Enter to continue the cluster removal, other keys to abort.)"
+      read INPUT
+      if [ "$INPUT" != "continue" ]; then
+         echo "Command aborted."
+         exit
+      fi
+   fi
+fi
+if [ -f "$WORKSPACE_DIR" ]; then
+   echo "----------------------------------------------------------------"
+   echo "ERROR: The specified directory is an existing file. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1
+fi
+
+if [ "$JAVA_HOME_ARG" == "" ]; then
+   JAVA_HOME_ARG=$JAVA_HOME
+fi
+if [ "$GEODE_ARG" == "" ]; then
+   GEODE_ARG=$GEODE_HOME
+fi
+
+# Default cluster
+if [ $CLUSTER_SPECIFIED == "false" ]; then
+   CLUSTER=""
+fi
+
+# VM
+VM_ENABLED=$VM_SPECIFIED
+
+if [ "$QUIET" == "true" ]; then
+   WORKSPACE=$NAME_ARG
+   WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE
+   if [ "$GEODE_ARG" != "" ]; then
+      if [ "$CLUSTER" == "" ]; then
+         CLUSTER=$DEFAULT_CLUSTER
+      fi
+   fi
+else
+   echo ""
+   echo "Please answer the prompts that appear below. If you are not able to complete"
+   echo "the prompts at this time then use the '-quiet' option to bypass the prompts."
+   echo "You can complete the requested values later in the generated 'setenv.sh' file"
+   echo "You can abort this command at any time by entering 'Ctrl-C'."
+   echo ""
+   __JAVA_HOME=$JAVA_HOME_ARG
+   __GEODE_HOME=$GEODE_ARG
+   __WORKSPACE=$NAME_ARG
+   REDO=true
+   while [ "$REDO" == "true" ]; do
+
+      # JAVA_HOME
+      __REDO=true
+      while [ "$__REDO" == "true" ]; do
+
+         echo "Enter Java home path."
+         if [[ $OS_NAME == CYGWIN* ]]; then
+	    echo "Enter only Unix absolute path. Windows path not allowed."
+         fi
+         echo "[$__JAVA_HOME]:"
+
+         read -p "" INPUT
+         # trim string
+         INPUT=`echo "$INPUT" | xargs`
+         if [ "$INPUT" != "" ]; then
+            __JAVA_HOME="$INPUT"
+         fi
+         if [[ $OS_NAME == CYGWIN* ]]; then
+            __JAVA_HOME=$(cygpath -au "$__JAVA_HOME")
+         fi
+         if [ ! -d "$__JAVA_HOME" ]; then
+            echo "Directory does not exist or not a directory."
+            __JAVA_HOME=$JAVA_HOME_ARG
+            __REDO=true
+         else
+            __REDO=false
+         fi
+      done
+      JAVA_HOME=$__JAVA_HOME
+
+      # GEODE_HOME
+      __REDO=true
+      while [ "$__REDO" == "true" ]; do
+
+         echo "Enter Geode (IMDG) home directory path. Choose one"
+         echo "from the defaults listed below or enter another."
+         if [[ $OS_NAME == CYGWIN* ]]; then
+	    echo "Enter only Unix absoulte path. Windows path not allowed."
+         fi
+         if [ "$GEODE_HOME" != "" ]; then
+            echo "   $GEODE_HOME"
+         fi
+         echo "[$__GEODE_HOME]:"
+
+         read -p "" INPUT
+         # trim string
+         INPUT=`echo "$INPUT" | xargs`
+         if [ "$INPUT" != "" ]; then
+            __GEODE_HOME=$INPUT
+         fi
+         if [[ $OS_NAME == CYGWIN* ]]; then
+            __GEODE_HOME="$(cygpath -au $__GEODE_HOME)"
+         fi
+         if [ ! -d "$__GEODE_HOME" ]; then
+            echo "Directory does not exist or not a directory."
+            __GEODE_HOME=$GEODE_ARG
+            __REDO=true
+         else
+            __REDO=false
+         fi
+      done
+      if [ "$CLUSTER" == "" ]; then
+         CLUSTER=$DEFAULT_CLUSTER
+      fi
+      GEODE_HOME=$__GEODE_HOME
+
+      # WORKSPACE
+      __REDO=true
+      while [ "$__REDO" == "true" ]; do
+
+         echo "Enter workspace name."
+         echo "[$__WORKSPACE]:"
+
+         read -p "" INPUT
+         # trim string
+         INPUT=`echo "$INPUT" | xargs`
+         if [ "$INPUT" != "" ]; then
+            __WORKSPACE="$INPUT"
+         fi
+         __WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE
+         if [ -d "$__WORKSPACE_DIR" ]; then
+            echo "Workspace already exists. Please enter another workspace name."
+            __WORKSPACE=$NAME_ARG
+            __REDO=true
+         else
+            __REDO=false
+         fi
+      done
+      WORKSPACE=$__WORKSPACE
+      WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE
+
+      # CLUSTER
+      echo "Enter default cluster name."
+      echo "[$CLUSTER]:"
+      read -p "" INPUT
+      # trim string
+      INPUT=`echo "$INPUT" | xargs`
+      if [ "$INPUT" != "" ]; then
+         CLUSTER=$INPUT
+      fi
+
+      # VM
+      INNER_LOOP=true
+      while [ "$INNER_LOOP" == "true" ]; do
+         read -p "Enable VM? Enter 'true' or 'false' [$VM_ENABLED]: " INPUT 
+         # trim string
+         INPUT=`echo "$INPUT" | xargs`
+         if [ "$INPUT" == "" ]; then
+            INPUT=$VM_ENABLED
+         fi
+         if [ "$INPUT" == "true" ] || [ "$INPUT" == "false" ]; then
+            VM_ENABLED=$INPUT
+            REDO=false;
+            INNER_LOOP=false;
+         fi
+      done
+
+      echo ""
+      echo "You have entered the following."
+      echo "                   JAVA_HOME: $JAVA_HOME"
+      echo "              GEODE_HOME: $GEODE_HOME"
+      echo "   GEODE_ADDON_WORKSPACE: $WORKSPACE_DIR"
+      echo "             Default Cluster: $CLUSTER"
+      echo "                  VM Enabled: $VM_ENABLED"
+
+      REDO=true
+      INNER_LOOP=true
+      while [ "$INNER_LOOP" == "true" ]; do
+         read -p "Enter 'c' to continue, 'r' to re-enter, 'q' to quit: " INPUT
+         case $INPUT in
+            [Cc]* ) REDO=false; INNER_LOOP=false;;
+            [Rr]* ) REDO=true; INNER_LOOP=false;;
+            [Qq]* ) echo "Command Aborted."; INNER_LOOP=false; exit;;
+         esac
+      done
+   done
+fi
+
+mkdir -p $WORKSPACE_DIR/clusters
+mkdir -p $WORKSPACE_DIR/pods
+mkdir -p $WORKSPACE_DIR/apps
+mkdir -p $WORKSPACE_DIR/lib
+mkdir -p $WORKSPACE_DIR/plugins
+mkdir -p $WORKSPACE_DIR/bundles
+
+#
+# Create setenv.sh
+#
+echo "#!/usr/bin/env bash" > $WORKSPACE_DIR/setenv.sh
+echo "SCRIPT_DIR=\"\$(cd -P -- \"\$(dirname -- \"\${BASH_SOURCE[0]}\")\" && pwd -P)\"" >> $WORKSPACE_DIR/setenv.sh
+echo ". \$SCRIPT_DIR/.addonenv.sh \$*" >> $WORKSPACE_DIR/setenv.sh
+echo "" >> $WORKSPACE_DIR/setenv.sh
+echo "#" >> $WORKSPACE_DIR/setenv.sh
+echo "# The following environment variables are required. Without them, geode-addon may not" >> $WORKSPACE_DIR/setenv.sh
+echo "# function properly." >> $WORKSPACE_DIR/setenv.sh
+echo "#" >> $WORKSPACE_DIR/setenv.sh
+if [ "$JAVA_HOME" != "" ]; then
+   echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $WORKSPACE_DIR/setenv.sh
+else
+   echo "#export JAVA_HOME=" >> $WORKSPACE_DIR/setenv.sh
+fi
+if [ "$GEODE_HOME" != "" ]; then
+   echo "export GEODE_HOME=\"$GEODE_HOME\"" >> $WORKSPACE_DIR/setenv.sh
+else
+   echo "#export GEODE_HOME=" >> $WORKSPACE_DIR/setenv.sh
+fi
+echo "export GEODE_ADDON_HOME=$BASE_DIR" >> $WORKSPACE_DIR/setenv.sh
+echo "" >> $WORKSPACE_DIR/setenv.sh
+echo "#" >> $WORKSPACE_DIR/setenv.sh
+echo "# Add your workspace-wide environment variables in this file." >> $WORKSPACE_DIR/setenv.sh
+echo "# The environment variables set in this file are used for all clusters running" >> $WORKSPACE_DIR/setenv.sh
+echo "# in this workspace. Cluster specifics should be added in clusters/<cluster>/setenv.sh." >> $WORKSPACE_DIR/setenv.sh
+echo "#" >> $WORKSPACE_DIR/setenv.sh
+echo "" >> $WORKSPACE_DIR/setenv.sh
+echo "# Set default cluster name. This cluster name is used if the '-cluster' option is not specified" >> $WORKSPACE_DIR/setenv.sh
+echo "# when running geode-addon commands." >> $WORKSPACE_DIR/setenv.sh
+echo "if [ \"\$CLUSTER\" == \"\" ]; then" >> $WORKSPACE_DIR/setenv.sh
+echo "   export CLUSTER=\"$CLUSTER\"" >> $WORKSPACE_DIR/setenv.sh
+echo "fi" >> $WORKSPACE_DIR/setenv.sh
+echo "" >> $WORKSPACE_DIR/setenv.sh
+echo "# Set default pod name. This pod name is used if the '-pod' option is not specified" >> $WORKSPACE_DIR/setenv.sh
+echo "# when running geode-addon commands" >> $WORKSPACE_DIR/setenv.sh
+echo "#export POD=" >> $WORKSPACE_DIR/setenv.sh
+echo " " >> $WORKSPACE_DIR/setenv.sh
+echo "# Set Java options. Your Java options are added to the geode-addon Java options." >> $WORKSPACE_DIR/setenv.sh
+echo "#JAVA_OPTS=" >> $WORKSPACE_DIR/setenv.sh
+echo " " >> $WORKSPACE_DIR/setenv.sh
+echo "# Set your class path. This class path is prepended to the geode-addon class path." >> $WORKSPACE_DIR/setenv.sh
+echo "# The class path is defined in the following order:" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$CLASSPATH" >> $WORKSPACE_DIR/setenv.sh >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_WORKSPACE/clusters/<cluster>/plugins/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_WORKSPACE/clusters/<cluster>/lib/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_WORKSPACE/plugins/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_WORKSPACE/lib/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_HOME/plugins/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_HOME/lib/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_HOME/plugins/v?/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#    \$GEODE_ADDON_HOME/lib/v?/*" >> $WORKSPACE_DIR/setenv.sh
+if [ "$IS_GEODE_ENTERPRISE" == "true" ]; then
+echo "#    \$GEODE_HOME/lib/geode-enterprise-all-<version>.jar" >> $WORKSPACE_DIR/setenv.sh
+else
+echo "#    \$GEODE_HOME/lib/geode-all-<version>.jar" >> $WORKSPACE_DIR/setenv.sh
+fi
+echo "#    \$GEODE_HOME/user-lib/*" >> $WORKSPACE_DIR/setenv.sh
+echo "#CLASSPATH=" >> $WORKSPACE_DIR/setenv.sh
+
+#
+# Copy initenv.sh
+#
+cp $BASE_DIR/etc/init/initenv.sh $WORKSPACE_DIR
+
+#
+# Create .addonenv.sh
+#
+echo "#!/usr/bin/env bash" > $WORKSPACE_DIR/.addonenv.sh
+echo "SCRIPT_DIR=\"\$(cd -P -- \"\$(dirname -- \"\${BASH_SOURCE[0]}\")\" && pwd -P)\"" >> $WORKSPACE_DIR/.addonenv.sh
+echo "" >> $WORKSPACE_DIR/.addonenv.sh
+echo "export GEODE_ADDON_WORKSPACE=\$SCRIPT_DIR" >> $WORKSPACE_DIR/.addonenv.sh
+echo "export CLUSTERS_DIR=\$GEODE_ADDON_WORKSPACE/clusters" >> $WORKSPACE_DIR/.addonenv.sh
+echo "export PODS_DIR=\$GEODE_ADDON_WORKSPACE/pods" >> $WORKSPACE_DIR/.addonenv.sh
+echo "export APPS_DIR=\$GEODE_ADDON_WORKSPACE/apps" >> $WORKSPACE_DIR/.addonenv.sh
+
+#
+# Switch workspace and create cluster. This is done is sub-shell and hence
+# the exported variables do not carry on to the parent shell.
+#
+export GEODE_ADDON_WORKSPACE=$WORKSPACE_DIR
+export CLUSTER
+$SCRIPT_DIR/switch_workspace
+if [ "$VM_ENABLED" == "true" ]; then
+   $SCRIPT_DIR/create_cluster -cluster $CLUSTER -vm
+else
+   $SCRIPT_DIR/create_cluster -cluster $CLUSTER
+fi
+
+#
+# Display workspace information
+#
+echo ""
+echo "Workspace created:"
+echo "   $WORKSPACE_DIR"
+echo ""
+echo "The workspace directory also contains the following files."
+echo ""
+echo "   initenv.sh -  Workspace initialization file. Source this file in to"
+echo "                 enter the workspace."
+echo ""
+echo "   setenv.sh -  You can set your workspace-wide environment variables in"
+echo "                this file."
+echo ""
+echo "   .addonenv.sh - A hidden file containing the workspace environment variables."
+echo "                  You can overwrite them in setenv.sh as needed."
+echo ""
+echo "IMPORTANT:"
+echo "----------"
+if [ "$GEODE_ADDON_WORKSPACES_HOME" != "" ]; then
+   echo "To use this workspace, execute the 'switch_workspace' command as follows:"
+   echo -e "   ${CLightGreen}switch_workspace $WORKSPACE${CNone}"
+else
+   echo "You created this workspace without having the workspaces initialized. It is"
+   echo "strongly recommended that you first intialize the workspaces by executing"
+   echo "'init_addon' before creating workspaces. Although you may use this workspace"
+   echo "it may not be compatible with the future geode-addon releases."
+fi
+echo ""

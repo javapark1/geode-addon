@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-all -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Display the present (current) geode-addon workspace information 
+
+SYNOPSIS
+   $EXECUTABLE [-?]
+
+DESCRIPTION
+   Displays the nam of th epresent (current) working workspace. If the '-all' option
+   is present then it displays current environment details.
+
+OPTIONS
+   -all
+             If specified then it displays the current environment details.
+
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+DEFAULT
+   $EXECUTABLE
+
+EOF
+fi
+cat <<EOF
+SEE ALSO
+EOF
+   printSeeAlsoList "*workspace*" $EXECUTABLE
+   exit
+fi
+
+WORKSPACE="`basename $GEODE_ADDON_WORKSPACE`"
+
+if [ "$ALL" = "true" ]; then
+   echo "----------------------------------------------------------------"
+   if [ "$CLUSTER_TYPE" == "geode" ]; then
+   echo "                 GEODE_HOME: $GEODE_HOME"
+   else
+   echo "               GEMFIRE_HOME: $GEODE_HOME"
+   fi
+   echo "           GEODE_ADDON_HOME: $GEODE_ADDON_HOME"
+   echo "GEODE_ADDON_WORKSPACES_HOME: $GEODE_ADDON_WORKSPACES_HOME"
+   echo "      GEODE_ADDON_WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "                   CLUSTER_TYPE: $CLUSTER_TYPE"
+   echo "              Current Workspace: $WORKSPACE"
+   echo "                Current Cluster: $CLUSTER"
+   echo "----------------------------------------------------------------"
+else
+   echo "$WORKSPACE"
+fi

@@ -1,0 +1,133 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-console -list -header -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Show the specified bundle's READEME.md in the browser 
+
+SYNOPSIS
+   $EXECUTABLE [-console] [-list|-header] bundle_file_name
+
+DESCRIPTION
+   Displays the specified bundle's README.md file in the browser by default. If it's
+   unable to launch the browser then it displays the README.md file on the console instead.
+
+OPTIONS
+   -list
+             Lists all bundles available in the remote geode-addon bundle repo.
+
+   -header
+             Lists all bundles along with header information describing each bundle in the
+             remote geode-addon bundle repo.
+            
+   -console
+             Display README.md on the console. By default, if this option is not specified,
+             then it displays the README.md file in the browser. If the browser cannot be
+             launched then it displays the README.md file on the console instead.
+
+   bundle_file_name
+             Bundle file name. List the bundle file names by running the 'install_bundle -list'
+             command.
+
+DEFAULT
+   $EXECUTABLE bundle_file_name
+
+EXAMPLES
+   To list remote bundles:
+      $EXECUTABLE -list
+
+   To list headers of remote bundles:
+      $EXECUTABLE -header
+
+   To view a remote bundle help (READEME.md) in the browser:
+      $EXECUTABLE bundle-jet-3.2-cluster-trade.tar.gz
+
+   To view a remote bundle help (READEME.md) on the console:
+      $EXECUTABLE -console bundle-jet-3.2-cluster-trade.tar.gz
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*bundle*" $EXECUTABLE
+   exit
+fi
+
+if [ "$1" == "" ]; then
+   LIST="true"
+fi
+
+HELP_URL="https://github.com/javapark1/geode-addon-bundles/tree/master/help"
+RAW_URL="https://raw.githubusercontent.com/javapark1/geode-addon-bundles/master/help"
+
+if [ "$LIST" == "true" ] || [ "$HEADER" == "true" ]; then
+   TITLE=`curl -sS $BUNDLE_LIST_URL | grep "title=\"bundle-"`
+   echo ""
+   echo "Remote Bundle List"
+   echo "------------------"
+   echo "(Repo: $BUNDLE_REPO)"
+   echo ""
+   let INDEX=0
+   for i in $TITLE; do
+      if [[ $i == title=* ]]; then
+         let INDEX=INDEX+1
+         bundle=$(echo $i | sed -e 's/^.*title=\"bundle-/bundle-/' -e 's/.tar.gz.*/.tar.gz/')
+         echo -e "[$INDEX] ${CLightGreen}${bundle}${CNone}"
+         if [ "$HEADER" == "true" ]; then
+            BUNDLE_NAME=${bundle/.tar.gz/}
+            RAW_FILE_URL="${RAW_URL}/${BUNDLE_NAME}/README_HEADER.md"
+            echo "    $(curl -sS $RAW_FILE_URL)"
+            echo ""
+         fi
+      fi
+   done
+   if [ "$HEADER" == "false" ]; then   
+      echo ""
+   fi
+   exit
+fi
+
+BUNDLE_FILE_PATH=${@: -1}
+
+# Remove .tar.gz from the file name
+BUNDLE_NAME=${BUNDLE_FILE_PATH/.tar.gz/}
+
+BROWSER_URL="${HELP_URL}/${BUNDLE_NAME}/README.md"
+RAW_FILE_URL="${RAW_URL}/${BUNDLE_NAME}/README.md"
+
+if [ "$CONSOLE" == "true" ]; then
+   curl $RAW_FILE_URL
+   URL=$RAW_FILE_URL
+else
+   if [[ ${OS_NAME} == DARWIN* ]]; then
+      open "$BROWSER_URL"
+      URL=$BROWSER_URL
+   elif [[ ${OS_NAME} == CYGWIN* ]]; then
+      cmd /c start "" "$BROWSER_URL"
+      URL=$BROWSER_URL
+   else
+      curl $RAW_FILE_URL
+      URL=$RAW_FILE_URL
+   fi
+fi
+
+echo ""
+echo $BROWSER_URL
+echo ""

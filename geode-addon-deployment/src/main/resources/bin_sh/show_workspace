@@ -1,0 +1,78 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+NAME
+   $EXECUTABLE - Display the current geode-addon workspace information
+
+SYNOPSIS
+   $EXECUTABLE [-?]
+
+   Displays the current workspace information.
+
+DEFAULT
+   $EXECUTABLE
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*workspace*" $EXECUTABLE
+   exit
+fi
+
+#
+# Displays a tree view of the specified list
+# @param list   Space separated list
+#
+function showTree
+{
+   local LIST=($1)
+   local len=${#LIST[@]}
+   local last_index
+   let last_index=len-1
+   for ((i = 0; i < $len; i++)); do
+      if [ $i -lt $last_index ]; then
+         echo "├── ${LIST[$i]}"
+      else
+         echo "└── ${LIST[$i]}"
+      fi
+   done
+}
+
+echo ""
+echo "Workspaces Home:"
+echo "   $GEODE_ADDON_WORKSPACES_HOME"
+echo ""
+echo "WORKSPACE"
+echo "   $GEODE_ADDON_WORKSPACE"
+echo ""
+echo "Cluster Type: "
+echo "   $CLUSTER_TYPE"
+echo ""
+echo "Current Cluster: "
+echo "   $CLUSTER"
+echo ""
+echo "Clusters:"
+showTree "$(getClusters)"
+echo ""
+echo "Apps:"
+showTree "$(getApps)"
+echo ""
+echo "Pods:"
+showTree "$(getPods)"
+echo ""

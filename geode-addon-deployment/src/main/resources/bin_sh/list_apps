@@ -1,0 +1,70 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+NAME
+   $EXECUTABLE - List all apps in the current geode-addon workspace
+
+SYNOPSIS
+   $EXECUTABLE [-?]
+
+DESCRIPTION
+   Lists all apps in the current workspace.
+
+DEFAULT
+   $EXECUTABLE
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*app*" $EXECUTABLE
+   exit
+fi
+
+if [ "$GEODE_ADDON_WORKSPACES_HOME" == "" ]; then
+   >&2 echo "ERROR: Workspaces not initialized. Please first run 'init_addon' to initialize workspaces."
+   >&2 echo "       Command aborted."
+   exit 1
+fi
+if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME" ]; then
+   >&2 echo "ERROR: Invalid workspaces. Please run 'init_addon' to initialize workspaces."
+   >&2 echo "       Command aborted."
+   exit 1
+fi
+
+if [ "$GEODE_ADDON_WORKSPACE" == "" ]; then
+   >&2 echo "ERROR: Workspace undefined. Please first create a workspace."
+   >&2 echo "       Command aborted."
+   exit 1
+fi
+if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
+   >&2 echo "ERROR: Invalid workspace. Directory does not exist."
+   >&2 echo "       $GEODE_ADDON_WORKSPACE"
+   >&2 echo "       Command aborted."
+   exit 1
+fi
+
+echo ""
+echo "WORKSPACE"
+echo "   $GEODE_ADDON_WORKSPACE"
+echo ""
+echo "Apps:"
+echo "   $GEODE_ADDON_WORKSPACE/apps"
+echo ""
+ls $GEODE_ADDON_WORKSPACE/apps
+echo ""
