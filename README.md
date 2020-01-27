@@ -6,7 +6,7 @@ The `geode-addon` repo contains Apache Geode/Pivotal GemFire specific tools and 
 
 The `geode-addon` distribution includes the following components:
 
-1. [Addon Library](geode-addon-core/README.md)
+1. [Addon Library](geode-addon-core/)
 2. [Cluster Lifecycle Management Scripts](geode-addon-deployment/src/main/resources/bin_sh/)
 3. [Vagrant Pods](geode-addon-deployment/src/main/resources/pods/)
 4. [VMs (AWS, Azure, GCP, etc)](doc/VMs.md)
@@ -31,6 +31,7 @@ The following is a list of examples provided to help you get familiar with `geod
 If you want to generate man pages then execute `build_dist`.sh. This is the recommended way to build the `geode-addon` distribution.
 
 ```console
+chmod 755 build_dish.sh
 ./build_dist.sh
 ```
 
@@ -53,6 +54,7 @@ geode-addon-deployment/target/assembly/geode-addon_<version>.zip
 To keep the distribution file size minimal, by default, most of the apps do not include the required binary files. You can build these apps when you install them later by running their `build_app` scripts. If your users do not have the Internet access then you can build the apps now by running the `build_all.sh` script, which generates the `geode-addon-all_<version>.targ.gz` file that includes all of the apps that are fully compiled and packaged.
 
 ```console
+chmod 755 build_all.sh
 ./build_all.sh
 ```
 

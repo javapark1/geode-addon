@@ -67,7 +67,7 @@ for i in $COMMANDS; do
    $i -? -man > $TMP_DIR/${COMMAND_NAME}.txt
    MAN_FILE=$MAN_DIR/${COMMAND_NAME}.1
 
-   echo ".TH \"$COMMAND_NAME\" \"1\" \"$CREATION_DATE\" \"geode-addon $GEODE_ADDON_VERSION\" \"Geode Addon Manual\"" > $MAN_FILE
+   echo ".TH \"$COMMAND_NAME\" \"1\" \"$CREATION_DATE\" \"geode-addon $VERSION\" \"Geode Addon Manual\"" > $MAN_FILE
 
    section=""
    cluster_in_progress=false

@@ -44,7 +44,7 @@ bild.log
 
 # Backup files
 *.bak
-.swp
+.*.swp
 archive
 *.gfs
 *.log

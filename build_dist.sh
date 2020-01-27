@@ -47,6 +47,7 @@ fi
 tar -C build/ -xzf geode-addon-deployment/target/assembly/geode-addon_${VERSION}.tar.gz
 
 # Build man pages
+chmod 755 ./create_man_files.sh
 ./create_man_files.sh
 
 # tar up the distribution which now includes man pages
