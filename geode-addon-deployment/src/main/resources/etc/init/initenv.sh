@@ -22,24 +22,24 @@ fi
 declare -a __PATHS
 let __INDEX=0
 if [ "$GEODE_HOME" != "" ]; then
-   __PATH[$__INDEX]="$GEODE_HOME/bin"
+   __PATHS[$__INDEX]="$GEODE_HOME/bin"
    let __INDEX=__INDEX+1
 fi
 if [ "$JAVA_HOME" != "" ]; then
-   __PATH[__INDEX]="$JAVA_HOME/bin"
+   __PATHS[__INDEX]="$JAVA_HOME/bin"
    let __INDEX=__INDEX+1
 fi
-__PATH[__INDEX]="$GEODE_ADDON_HOME/bin_sh"
+__PATHS[__INDEX]="$GEODE_ADDON_HOME/bin_sh"
 
-for ((i = 0; i < ${#__PATH[@]}; i++)); do
-   __TOKEN="${__PATH[$i]}"
+for ((i = 0; i < ${#__PATHS[@]}; i++)); do
+   __TOKEN="${__PATHS[$i]}"
    CLEANED_PATH=${CLEANED_PATH//$__TOKEN:/}
    CLEANED_PATH=${CLEANED_PATH//$__TOKEN/}
    CLEANED_PATH=${CLEANED_PATH//::/:}
 done
 GEODE_ADDON_PATH=""
-for ((i = 0; i < ${#__PATH[@]}; i++)); do
-   __TOKEN="${__PATH[$i]}"
+for ((i = 0; i < ${#__PATHS[@]}; i++)); do
+   __TOKEN="${__PATHS[$i]}"
    GEODE_ADDON_PATH=$__TOKEN:"$GEODE_ADDON_PATH"
 done
 export GEODE_ADDON_PATH="${GEODE_ADDON_PATH::-1}"
