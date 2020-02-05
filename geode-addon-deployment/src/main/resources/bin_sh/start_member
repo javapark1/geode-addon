@@ -410,11 +410,14 @@ fi
 GFSH_OPTS="$GFSH_OPTS --dir=$MEMBER_DIR \
       --initial-heap=$MIN_HEAP_SIZE \
       --max-heap=$MAX_HEAP_SIZE \
-      --disable-default-server \
+      --disable-default-server=true \
       --name=$MEMBER \
       --bind-address=$BIND_ADDRESS \
       --statistic-archive-file=$STATS_FILE \
-      --locators=$LOCATOR_TCP_LIST "
+      --locators=$LOCATOR_TCP_LIST"
+      
+# server-port does not work geode-1.11.0
+#     --server-port=$MEMBER_PORT"
 
 MEMBER_HTTP_ENABLED=`getClusterProperty "http.enabled" $DEFAULT_MEMBER_HTTP_ENABLED`
 if [ "$MEMBER_HTTP_ENABLED" == "true" ]; then

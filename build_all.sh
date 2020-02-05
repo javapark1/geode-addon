@@ -1,4 +1,4 @@
-#/bin/bash
+#!/usr/bin/env bash
 
 EXECUTABLE="`basename $0`"
 

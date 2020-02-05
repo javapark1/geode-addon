@@ -125,6 +125,7 @@ function getActiveVmMemberCount()
 WORKSPACE=${GEODE_ADDON_WORKSPACE##*/}
 
 # See if any members in the custer are still running. If so, abort.
+LOCATOR_RUNNING_COUNT=0
 MEMBER_RUNNING_COUNT=0
 if [ "$VM_ENABLED" == "true" ]; then
    VM_LOCATOR_HOSTS=$(getClusterProperty "vm.locator.hosts")
@@ -141,6 +142,33 @@ if [ "$VM_ENABLED" == "true" ]; then
    LOCATOR_RUNNING_COUNT=$(getActiveVmLocatorCount)
    MEMBER_RUNNING_COUNT=$(getActiveVmMemberCount)
 else
+   # Locators
+   LOCATOR_COUNT=0
+   LOCATOR_PREFIX=`getLocatorPrefix`
+   pushd $RUN_DIR > /dev/null 2>&1
+   for i in ${LOCATOR_PREFIX}*; do
+      if [ -d "$i" ]; then
+         pushd $i > /dev/null 2>&1
+         let LOCATOR_COUNT=LOCATOR_COUNT+1
+         LOCATOR=$i
+         LOCATOR_DIR=$RUN_DIR/$LOCATOR
+         LOG_FILE=$LOG_DIR/${LOCATOR}.log
+         echo "----------------------------------------------------------------"
+         echo "  WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo "    Locator: $LOCATOR"
+         pid=`getLocatorPid $LOCATOR $WORKSPACE`
+         if [ -z $pid ]; then
+            echo "       *PID: N/A (Down)"
+         else
+            echo "        PID: $pid"
+            let LOCATOR_RUNNING_COUNT=LOCATOR_RUNNING_COUNT+1
+         fi
+         echo "Working Dir: $LOCATOR_DIR"
+         popd > /dev/null 2>&1
+      fi
+   done
+
+   # Members
    MEMBER_COUNT=0
    MEMBER_PREFIX=`getMemberPrefix`
    pushd $RUN_DIR > /dev/null 2>&1
@@ -167,18 +195,18 @@ else
    done
 fi
 
-if [ $LOCATOR_RUNNING_COUNT -gt 0 ]; then
-   echo >&2 "----------------------------------------------------------------"
-   echo >&2 "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   echo >&2 "    ERROR: ${LOCATOR_RUNNING_COUNT} locator(s) are still running in the cluster. Please stop them first."
-   echo >&2 "           Command aborted."
-   echo >&2 "----------------------------------------------------------------"
-   exit 1
-fi
 if [ $MEMBER_RUNNING_COUNT -gt 0 ]; then
    echo >&2 "----------------------------------------------------------------"
    echo >&2 "WORKSPACE: $GEODE_ADDON_WORKSPACE"
    echo >&2 "    ERROR: ${MEMBER_RUNNING_COUNT} member(s) are still running in the cluster. Please stop them first."
+   echo >&2 "           Command aborted."
+   echo >&2 "----------------------------------------------------------------"
+   exit 1
+fi
+if [ $LOCATOR_RUNNING_COUNT -gt 0 ]; then
+   echo >&2 "----------------------------------------------------------------"
+   echo >&2 "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo >&2 "    ERROR: ${LOCATOR_RUNNING_COUNT} locator(s) are still running in the cluster. Please stop them first."
    echo >&2 "           Command aborted."
    echo >&2 "----------------------------------------------------------------"
    exit 1
