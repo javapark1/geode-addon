@@ -33,7 +33,7 @@ cp -r $CLUSTER_DIR/etc geode-addon/
 Place the following in `composer/docker-compose.yml`. Make sure to change the `hostname-for-clients` value (192.168.1.15) with your host OS IP address. Note that `geode-addon` uses the system property, `geode-addons.server.port` instead of gfsh's `--server-port` which does not work in the stand-alone (non-docker) environement.
 
 ```yaml
-version: '2.1'
+version: '2.4'
 
 services:
   locator:
@@ -44,7 +44,6 @@ services:
      - "10334"
      - "1099"
      - "7575"
-    #  - "1024"
     ports:
      - "1099:1099"
      - "10334:10334"
@@ -56,9 +55,9 @@ services:
 
   server1:
     image: apachegeode/geode
-    mem_limit: 2g
-    links:
-     - locator:locator
+    mem_limit: 1g
+    depends_on:
+     - locator
     expose:
      - "8080"
      - "40404"
@@ -73,9 +72,9 @@ services:
 
   server2:
     image: apachegeode/geode
-    mem_limit: 2g
-    links:
-     - locator:locator
+    mem_limit: 1g
+    depends_on:
+     - locator
     expose:
      - "8080"
      - "40405"
@@ -90,9 +89,9 @@ services:
 
   server3:
     image: apachegeode/geode
-    mem_limit: 2g
-    links:
-     - locator:locator
+    mem_limit: 1g
+    depends_on:
+     - locator
     expose:
      - "8080"
      - "40406"
