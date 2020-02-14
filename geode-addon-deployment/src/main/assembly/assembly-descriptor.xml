@@ -95,6 +95,21 @@
 			</includes>
 		</fileSet>
 		
+		<!-- k8s: k8s files -->
+		<fileSet>
+			<directory>src/main/resources/k8s</directory>
+			<outputDirectory>k8s/</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>src/main/resources/k8s/kustom/bin_sh</directory>
+			<outputDirectory>k8s/kustom/bin_sh</outputDirectory>
+			<includes>
+				<include>**</include>
+			</includes>
+			<fileMode>0755</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		
 		<!-- apps -->
 		<!-- Make app bin_sh files executable. -->
 		<fileSet>
