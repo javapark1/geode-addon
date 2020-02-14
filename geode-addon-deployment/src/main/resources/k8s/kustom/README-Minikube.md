@@ -118,7 +118,11 @@ MINIKUBE_IP=<minikube ip>
 ./set_minikube
 ```
 
+<<<<<<< HEAD
 :exclamation: Whenever you switch from WSL to PowerShell, you must run `set_minikube.bat` to set the correct paths, and vice versa.
+=======
+:exclamation: Whenever you switch from WSL to PowerShell (or DOS), you must run `set_minikube.bat` to set the correct paths, and vice versa.
+>>>>>>> refs/remotes/origin/master
 
 After running `set_minikube`, now create certificates for Prometheus as follows.
 
