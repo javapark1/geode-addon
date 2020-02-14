@@ -254,16 +254,15 @@ cd_app perf_test
 vi etc/client-cache.xml
 ```
 
-Replace the locator endpoint with server endpoints as follows. Change the `host` value with your Minikube IP address.
+Replace the locator endpoint with server endpoints as shown below. Note that `read-timeout` and `retry-attempts` are set to ensure the client connections do not timeout prematureally. This may occur when you run the client app initially due to the limited Kubernetes resrouces in the Minikube environment.
 
 ```xml
 <!-- $GEODE_ADDON_WORKSPACE/apps/perf_test/etc/client-cache.xml -->
-   <pool name="serverPool">
+   <pool name="serverPool" read-timeout="20000" retry-attempts="5">
       <server host="minikube" port="30404" />
       <server host="minikube" port="30405" />
    </pool>
 ```
-
 
 ## Testing Horizontal Pod Autoscaler (HPA)
 
@@ -295,7 +294,9 @@ vi etc/ingestion.properties
 profile.totalEntryCount=20000
 ```
 
-The above change should add just enough data into the Geode cluster so that it will increase the `on_heap_ratio` to above 850m. Run `perf_test` as follows:
+The above change should add just enough data into the Geode cluster so that it will increase the `on_heap_ratio` to above 850m.
+
+Run `perf_test` as follows:
 
 ```bash
 cd_app perf_test; cd bin_sh
