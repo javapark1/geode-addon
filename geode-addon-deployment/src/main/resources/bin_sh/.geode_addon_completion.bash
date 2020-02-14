@@ -85,7 +85,14 @@ __geode_addon_complete()
      ;;
    
    -cluster)
-      type_list=`getClusters`
+      if [ "$second_word" == "create_k8s" ]; then
+         __ENV="k8s"
+      elif [ "$second_word" == "create_docker" ]; then
+         __ENV="docker"
+      else
+         __ENV="clusters"
+      fi
+      type_list=`getClusters $__ENV`
       ;;
 
    -workspace)
@@ -149,6 +156,14 @@ __geode_addon_complete()
       elif [ "$second_word" == "cd_pod" ]; then
             if [ $len -lt 4 ]; then
                type_list=`ls $GEODE_ADDON_WORKSPACE/pods`
+            fi
+      elif [ "$second_word" == "cd_k8s" ]; then
+            if [ $len -lt 4 ]; then
+               type_list=`ls $GEODE_ADDON_WORKSPACE/k8s`
+            fi
+      elif [ "$second_word" == "cd_docker" ]; then
+            if [ $len -lt 4 ]; then
+               type_list=`ls $GEODE_ADDON_WORKSPACE/docker`
             fi
       elif [ "$second_word" == "cd_app" ]; then
             if [ $len -lt 4 ]; then
@@ -228,6 +243,38 @@ __pods_complete()
      type_list=""
    else
       type_list=`ls $GEODE_ADDON_WORKSPACE/pods`
+   fi
+
+   COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
+   return 0
+}
+
+__k8s_complete()
+{
+   local len cur_word type_list
+   len=${#COMP_WORDS[@]}
+   cur_word="${COMP_WORDS[COMP_CWORD]}"
+
+   if [ $len -ge 3 ]; then
+     type_list=""
+   else
+      type_list=`ls $GEODE_ADDON_WORKSPACE/k8s`
+   fi
+
+   COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
+   return 0
+}
+
+__docker_complete()
+{
+   local len cur_word type_list
+   len=${#COMP_WORDS[@]}
+   cur_word="${COMP_WORDS[COMP_CWORD]}"
+
+   if [ $len -ge 3 ]; then
+     type_list=""
+   else
+      type_list=`ls $GEODE_ADDON_WORKSPACE/docker`
    fi
 
    COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
@@ -314,8 +361,14 @@ __command_complete()
          type_list=`getApps`
       fi
       ;;
-   -cluster)
-      type_list=`getClusters`
+   -cluster) if [ "$command" == "create_k8s" ]; then
+         __ENV="k8s"
+      elif [ "$command" == "create_docker" ]; then
+         __ENV="docker"
+      else
+         __ENV="clusters"
+      fi
+      type_list=`getClusters $__ENV`
       ;;
    -workspace)
       if [ "$command" != "create_workspace" ]; then
@@ -389,6 +442,12 @@ complete -F __clusters_complete -o bashdefault -o default cd_cluster
 
 # Register cd_pod
 complete -F __pods_complete -o bashdefault -o default cd_pod
+
+# Register cd_k8s
+complete -F __k8s_complete -o bashdefault -o default cd_k8s
+
+# Register cd_docker
+complete -F __docker_complete -o bashdefault -o default cd_docker
 
 # Register cd_app
 complete -F __apps_complete -o bashdefault -o default cd_app

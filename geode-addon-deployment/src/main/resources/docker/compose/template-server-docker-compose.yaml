@@ -1,0 +1,34 @@
+  ${SERVER_NAME}:
+    image: apachegeode/geode
+    hostname: ${SERVER_NAME}
+    mem_limit: 1g
+    depends_on:
+     - locator
+    expose:
+     - "8080"
+     - "40404"
+     - "1099"
+    ports:
+     - "${HOST_PORT}:40404"
+    volumes:
+     - ./geode-addon:/geode-addon/
+    command:
+      - bash
+      - -c 
+      - |
+        if [ ! -d /run ]; then mkdir /run; fi \
+        && \
+        gfsh start server \
+            --name=`hostname` \
+            --locators=locator[${LOCATOR_PORT}] \
+            --dir=/run \
+            --max-heap=1G \
+            --hostname-for-clients=${HOSTNAME_FOR_CLIENTS} \
+            --classpath=/geode-addon/lib/*:/geode-addon/plugins/* \
+            --cache-xml-file=/geode-addon/etc/cache.xml \
+            --J=-Dgeode-addon.server.port=${SERVER_PORT} \
+        && \
+        while true; do
+           sleep 10
+        done
+    restart: on-failure

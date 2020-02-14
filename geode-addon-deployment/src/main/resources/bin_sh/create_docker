@@ -1,0 +1,162 @@
+#!/usr/bin/env bash 
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-docker -cluster -count -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Create a Docker environment in the current geode-addon workspace
+
+SYNOPSIS
+   $EXECUTABLE [-docker compose] [-count member_count] -cluster cluster_name [-?]
+
+DESCRIPTION
+   Creates a Docker environment that includes Geode cluster configuration files for
+   one of the following Docker tools:
+ 
+   compose  docker-compose Dockfile based cluster orchestration
+
+   To use the created environment, you must have the specified Docker tool installed.
+
+OPTIONS
+   -docker compose
+             Docker compose driven Gedoe cluster.
+
+   -count member_count
+             Number of members (servers) in the cluster. Default: 2
+
+   -cluster cluster_name
+             Required Geode cluster name. This name is used to create a Docker compose project,
+             for example.
+
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+DEFAULT
+   $EXECUTABLE -docker $DEFAULT_DOCKER -cluster cluster_name
+
+EOF
+fi
+   exit
+fi
+
+if [ "$CLUSTER_SPECIFIED" == "false" ]; then
+   >&2 echo "ERROR: The -cluster option is not specified. Command aborted."
+   exit 1
+fi
+
+if [ "$DOCKER" == "" ]; then
+   DOCKER=$DEFAULT_DOCKER
+fi
+if [ "$DOCKER" != "compose" ]; then
+   >&2 echo "ERROR: Unsupported Docker tool [$DOCKER]. Please use the '-?' option to see the usage. Command aborted."
+   exit 1
+fi
+if [ "$COUNT" == "" ]; then
+   COUNT=2
+fi
+if [ $COUNT -lt 1 ]; then
+   >&2 echo "ERROR: Inalid count [$COUNT]. Member (server) count cannot be less than 1. Command aborted."
+   exit 1
+fi
+
+#
+# k8s directory
+#
+DOCKER_DIR=$GEODE_ADDON_WORKSPACE/docker
+CLUSTER_DIR=$DOCKER_DIR/$CLUSTER
+
+if [ -d $CLUSTER_DIR ]; then
+   >&2 echo "ERROR: The specified Docker cluster exists. Command aborted."
+   exit
+fi
+   
+
+if [ ! -d $CLUSTER_DIR ]; then
+   mkdir -p $CLUSTER_DIR
+fi
+
+if [ "$DOCKER" == "compose" ]; then
+
+   mkdir -p $CLUSTER_DIR/geode-addon/etc
+   ETC_DIR=$CLUSTER_DIR/geode-addon/etc
+   LIB_DIR=$CLUSTER_DIR/geode-addon/lib
+   PLUGINS_DIR=$CLUSTER_DIR/geode-addon/plugins
+   DOCKER_DOC="README.md"
+
+   # Copy Docker doc
+   cp -rf $BASE_DIR/docker/compose/$DOCKER_DOC $CLUSTER_DIR
+   # Copy Dockfile and others
+   cp -rf $BASE_DIR/docker/compose/.env $CLUSTER_DIR
+   cp -rf $BASE_DIR/docker/compose/template-docker-compose.yaml $CLUSTER_DIR/docker-compose.yaml
+   # Copy the template gemfire.properties file
+   cp $BASE_DIR/etc/template-gemfire.properties $ETC_DIR/gemfire.properties
+   # Copy the template cache.xml file
+   cp $BASE_DIR/etc/template-cache.xml $ETC_DIR/cache.xml
+   # Copy the template log4j2.properties file
+   cp $BASE_DIR/etc/template-log4j2.properties $ETC_DIR/log4j2.properties
+   # Copy the template prometheus config file
+   cp $BASE_DIR/etc/template-prometheus.yml $ETC_DIR/prometheus.yml
+   # Copy the template hibernate config file
+   cp $BASE_DIR/etc/template-hibernate.cfg-mysql.xml $ETC_DIR/hibernate.cfg-mysql.xml
+   cp $BASE_DIR/etc/template-hibernate.cfg-postgresql.xml $ETC_DIR/hibernate.cfg-postgresql.xml
+   # Copy binary files
+   cp -r $BASE_DIR/lib $LIB_DIR
+   cp -r $BASE_DIR/plugins $PLUGINS_DIR
+
+   # Append server services to docker-compose.yaml
+   HOST_PORT=40404
+   for i in $(seq 1 $COUNT); do   
+      SERVER_NAME="server$i"
+      sed -e "s/\${SERVER_NAME}/$SERVER_NAME/" -e "s/\${HOST_PORT}/$HOST_PORT/" $BASE_DIR/docker/compose/template-server-docker-compose.yaml >> $CLUSTER_DIR/docker-compose.yaml
+      let HOST_PORT=HOST_PORT+1
+   done
+
+fi
+
+#
+# Display DOCKER Environment
+#
+echo ""
+echo "         WORKSPACE: $GEODE_ADDON_WORKSPACE"
+echo "            Docker: $DOCKER"
+echo "Docker Environment:"
+echo "   $CLUSTER_DIR"
+
+cat <<EOF
+
+$CLUSTER
+├── .env
+├── README-Docker.md
+├── docker-compose.yaml
+└── geode-addon
+    ├── etc
+    ├── lib
+    └── plugins
+
+EOF
+echo -e "Please follow the instructions in the ${CLightGreen}$DOCKER_DOC${CNone} document."
+echo -e "  - Change environment variables in the ${CLightGreen}.env${CNone} file as needed."
+echo -e "  - Configure locator(s) and servers (memvers) as needed in the ${CLightGreen}docker-compose.yaml${CNone} file as needed."
+echo "To start Docker cluster:"
+echo -e "   ${CLightGreen}cd_docker $CLUSTER${CNone}"
+echo -e "   ${CLightGreen}docker-compose up${CNone}"
+echo ""
+

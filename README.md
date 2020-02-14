@@ -11,10 +11,11 @@ The `geode-addon` distribution includes the following components:
 3. [Vagrant Pods](geode-addon-deployment/src/main/resources/pods/)
 4. [VMs (AWS, Azure, GCP, etc)](doc/VMs.md)
 5. [Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
-6. [Apps](geode-addon-deployment/src/main/resources/apps/)
+6. [Docker](geode-addon-deployment/src/main/resources/k8s/docker/compose)
+7. [Apps](geode-addon-deployment/src/main/resources/apps/)
    1. [Grafana](geode-addon-deployment/src/main/resources/apps/grafana)
    2. [perf_test](geode-addon-deployment/src/main/resources/apps/perf_test)
-7. [Bundles](#understanding-bundles)
+8. [Bundles](#understanding-bundles)
 
 ## Examples
 
@@ -607,9 +608,21 @@ Note that we define the term *addon pod* as a collection of VMs, whereas Kuberne
 
 ### Kubernetes
 
-In addition to addon pods described above, `hazelcast-addon` also includes Kubernetes support for running Hazelcast in **minikube** containers. `geode-addon` provides *kustomization* support for easily patching and customizing your Kubernetes environment. It includes configuration files for deploying a Geode cluster, custom metrics API, Prometheus adapter, and HPA (Horizontal Pod Autoscaler).
+In addition to addon pods described above, `geode-addon` also includes Kubernetes support for running Geode in **minikube** containers. `geode-addon` provides *kustomization* support for easily patching and customizing your Kubernetes environment. It includes configuration files for deploying a Geode cluster, custom metrics API, Prometheus adapter, and HPA (Horizontal Pod Autoscaler).
 
 [Go To Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
+
+### Docker
+
+With `geode-addon`'s built-in support for Docker, you can create and launch a Docker cluster on the fly. The following example creates a docker cluster with 3 Geode servers (members) and launches them using Docker Compose.
+
+```console
+create_docker -cluster mydocker -count 3
+cd_docker mydocker
+docker-compose up
+```
+
+[Go To Docker](geode-addon-deployment/src/main/resources/k8s/docker/compose)
 
 ### Grafana
 

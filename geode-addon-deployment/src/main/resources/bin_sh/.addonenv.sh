@@ -154,6 +154,9 @@ HELP_VALID_POD_TYPE_LIST="local|vagrant"
 # Default Kubernetes
 DEFAULT_K8S="minikube"
 
+# Default Docker tool
+DEFAULT_DOCKER="compose"
+
 #
 # Default heap min/max sizes. These values are initially set in $ETC_DIR/cluster.properties
 # when a new cluster is created using the 'create_cluster" command. All members in 

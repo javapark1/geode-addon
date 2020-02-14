@@ -282,12 +282,20 @@ function getWorkspaces
 }
 
 # 
-# Returns a complete list of clusters found in CLUSTERS_DIR.
-# @required CLUSTERS_DIR
+# Returns a complete list of clusters found in the speciefied cluster environment.
+# @required GEODE_ADDON_WORKSPACE  Workspace directory path.
+# @param clusterEnv   Optional cluster environment. 
+#                     Valid values: "clusters", "pods", "k8s", "docker", and "apps".
+#                     If unspecified then defaults to "clusters".
 #
 function getClusters
 {
-   pushd $CLUSTERS_DIR > /dev/null 2>&1
+   local __ENV="$1"
+   if [ "$__ENV" == "" ]; then
+      __ENV="clusters"
+   fi
+   local __CLUSTERS_DIR="$GEODE_ADDON_WORKSPACE/$__ENV"
+   pushd $__CLUSTERS_DIR > /dev/null 2>&1
    __CLUSTERS=""
    __COUNT=0
    for i in *; do
@@ -1302,6 +1310,108 @@ function cd_cluster
       cd $GEODE_ADDON_WORKSPACE/clusters/$CLUSTER
    else
       cd $GEODE_ADDON_WORKSPACE/clusters/$1
+   fi
+   pwd
+}
+
+#
+# Changes directory to the specified Kubernetes cluster directory. This function is provided
+# to be executed in the shell along with other geode-addon commands. It changes
+# directory in the parent shell.
+#
+# @required GEODE_ADDON_WORKSPACE Workspace path.
+# @param    clusterName         Optional cluster in the
+#                               $GEODE_ADDON_WORKSPACE/k8s directory.
+#                               If not specified, then switches to the   
+#                               current Kubernetes cluster directory.
+#
+function cd_k8s
+{
+   EXECUTABLE=cd_k8s
+   if [ "$1" == "-?" ]; then
+      echo "NAME"
+      echo "   $EXECUTABLE - Change directory to the specified geode-addon Kubernetes cluster directory"
+      echo "                 in the current workspace"
+      echo ""
+      echo "SYNOPSIS"
+      echo "   $EXECUTABLE [cluster_name] [-?]"
+      echo ""
+      echo "DESCRIPTION"
+      echo "   Changes directory to the specified Kubernetes directory."
+      echo ""
+      echo "OPTIONS"
+      echo "   cluster_name" 
+      echo "             Kubernetes cluster name. If not specified then changes to the"
+      echo "             current Kubernetes cluster directory."
+      if [ "$MAN_SPECIFIED" == "false" ]; then
+      echo ""
+      echo "DEFAULT"
+      echo "   $EXECUTABLE $CLUSTER"
+      fi
+      echo ""
+      echo "SEE ALSO"
+      printSeeAlsoList "*cluster*" $EXECUTABLE
+      return
+   elif [ "$1" == "-options" ]; then
+      echo "-?"
+      return
+   fi
+
+   if [ "$1" == "" ]; then
+      cd $GEODE_ADDON_WORKSPACE/k8s/$K8S
+   else
+      cd $GEODE_ADDON_WORKSPACE/k8s/$1
+   fi
+   pwd
+}
+
+#
+# Changes directory to the specified Docker cluster directory. This function is provided
+# to be executed in the shell along with other geode-addon commands. It changes
+# directory in the parent shell.
+#
+# @required GEODE_ADDON_WORKSPACE Workspace path.
+# @param    clusterName         Optional cluster in the
+#                               $GEODE_ADDON_WORKSPACE/docker directory.
+#                               If not specified, then switches to the   
+#                               current Docker cluster directory.
+#
+function cd_docker
+{
+   EXECUTABLE=cd_docker
+   if [ "$1" == "-?" ]; then
+      echo "NAME"
+      echo "   $EXECUTABLE - Change directory to the specified geode-addon Docker cluster directory"
+      echo "                 in the current workspace"
+      echo ""
+      echo "SYNOPSIS"
+      echo "   $EXECUTABLE [cluster_name] [-?]"
+      echo ""
+      echo "DESCRIPTION"
+      echo "   Changes directory to the specified Docker cluster."
+      echo ""
+      echo "OPTIONS"
+      echo "   cluster_name" 
+      echo "             Docker cluster name. If not specified then changes to the"
+      echo "             current Docker cluster directory."
+      if [ "$MAN_SPECIFIED" == "false" ]; then
+      echo ""
+      echo "DEFAULT"
+      echo "   $EXECUTABLE $CLUSTER"
+      fi
+      echo ""
+      echo "SEE ALSO"
+      printSeeAlsoList "*cluster*" $EXECUTABLE
+      return
+   elif [ "$1" == "-options" ]; then
+      echo "-?"
+      return
+   fi
+
+   if [ "$1" == "" ]; then
+      cd $GEODE_ADDON_WORKSPACE/docker/$DOCKER
+   else
+      cd $GEODE_ADDON_WORKSPACE/docker/$1
    fi
    pwd
 }

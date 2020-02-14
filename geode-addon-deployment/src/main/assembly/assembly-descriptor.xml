@@ -110,6 +110,12 @@
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		
+		<!-- docker: docker files -->
+		<fileSet>
+			<directory>src/main/resources/docker</directory>
+			<outputDirectory>docker/</outputDirectory>
+		</fileSet>
+		
 		<!-- apps -->
 		<!-- Make app bin_sh files executable. -->
 		<fileSet>

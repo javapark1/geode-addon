@@ -1,0 +1,25 @@
+version: '2.4'
+
+services:
+  locator:
+    image: apachegeode/geode
+    hostname: locator
+    mem_limit: 512m
+    expose:
+     - "10334"
+     - "1099"
+     - "7575"
+    ports:
+     - "1099:1099"
+     - "10334:10334"
+     - "7575:7575"
+     - "7070:7070"
+    command:
+      - bash
+      - -c 
+      - |
+        gfsh start locator --name=`hostname` --mcast-port=0 \
+        && \
+        while true; do
+           sleep 10
+        done
