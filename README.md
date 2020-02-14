@@ -10,10 +10,11 @@ The `geode-addon` distribution includes the following components:
 2. [Cluster Lifecycle Management Scripts](geode-addon-deployment/src/main/resources/bin_sh/)
 3. [Vagrant Pods](geode-addon-deployment/src/main/resources/pods/)
 4. [VMs (AWS, Azure, GCP, etc)](doc/VMs.md)
-5. [Apps](geode-addon-deployment/src/main/resources/apps/)
+5. [Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
+6. [Apps](geode-addon-deployment/src/main/resources/apps/)
    1. [Grafana](geode-addon-deployment/src/main/resources/apps/grafana)
    2. [perf_test](geode-addon-deployment/src/main/resources/apps/perf_test)
-6. [Bundles](#understanding-bundles)
+7. [Bundles](#understanding-bundles)
 
 ## Examples
 
@@ -603,6 +604,12 @@ For JQ, the binary download is the actual executable. You will need to create a 
 Note that we define the term *addon pod* as a collection of VMs, whereas Kubernete's pod is a group of one or more containers. We typically run one Geode/GemFire member per VM and therefore an addon pod represents a cluster of Geode/GemFire members. Similarly, on Kubernetes, we typically run one Geode/GemFire member (or container) per Kubernetes pod and therefore a group of pods represents a cluster of Geode/GemFire members.
 
 [Go To Pods](geode-addon-deployment/src/main/resources/pods/)
+
+### Kubernetes
+
+In addition to addon pods described above, `hazelcast-addon` also includes Kubernetes support for running Hazelcast in **minikube** containers. `geode-addon` provides *kustomization* support for easily patching and customizing your Kubernetes environment. It includes configuration files for deploying a Geode cluster, custom metrics API, Prometheus adapter, and HPA (Horizontal Pod Autoscaler).
+
+[Go To Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
 
 ### Grafana
 
