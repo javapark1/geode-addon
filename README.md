@@ -11,7 +11,7 @@ The `geode-addon` distribution includes the following components:
 3. [Vagrant Pods](geode-addon-deployment/src/main/resources/pods/)
 4. [VMs (AWS, Azure, GCP, etc)](doc/VMs.md)
 5. [Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
-6. [Docker](geode-addon-deployment/src/main/resources/k8s/docker/compose)
+6. [Docker](geode-addon-deployment/src/main/resources/docker/compose)
 7. [Apps](geode-addon-deployment/src/main/resources/apps/)
    1. [Grafana](geode-addon-deployment/src/main/resources/apps/grafana)
    2. [perf_test](geode-addon-deployment/src/main/resources/apps/perf_test)
@@ -622,7 +622,7 @@ cd_docker mydocker
 docker-compose up
 ```
 
-[Go To Docker](geode-addon-deployment/src/main/resources/k8s/docker/compose)
+[Go To Docker](geode-addon-deployment/src/main/resources/docker/compose)
 
 ### Grafana
 
