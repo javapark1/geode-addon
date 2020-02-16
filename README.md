@@ -252,19 +252,18 @@ This hidden file sets the `GEODE_ADDON_WORKSPACE` environment variable to the wo
 
 ```console
 geode_addon <tab><tab>
-add_locator     create_pod        list_workspaces  show_mc             stop_member
-add_member      create_script     pwd_cluster      show_pod            stop_pod
-add_node        create_workspace  pwd_workspace    show_workspace      stop_workspace
-backup_addon    geode_addon       remove_app       shutdown_cluster    switch_cluster
-build_pod       init_geode_addon  remove_cluster   shutdown_workspace  switch_workspace
-cd_app          install_bundle    remove_locator   start_cluster       vm_copy
-cd_cluster      kill_cluster      remove_member    start_locator       vm_deploy_addon
-cd_pod          kill_locator      remove_node      start_mc            vm_deploy_bundle
-cd_workspace    kill_member       remove_pod       start_member        vm_exec
-clean_cluster   kill_workspace    setenv.sh        start_pod
-create_app      list_apps         show_bundle      stop_cluster
-create_bundle   list_clusters     show_cluster     stop_locator
-create_cluster  list_pods         show_log         stop_mc
+-version            create_app          kill_member         remove_node         start_pod
+add_locator         create_bundle       kill_workspace      remove_pod          stop_cluster
+add_member          create_cluster      list_apps           show_bundle         stop_locator
+add_node            create_docker       list_clusters       show_cluster        stop_member
+build_pod           create_k8s          list_pods           show_log            stop_pod
+cd_app              create_pod          list_workspaces     show_pod            stop_workspace
+cd_cluster          create_script       pwd_cluster         show_workspace      switch_cluster
+cd_docker           create_workspace    pwd_workspace       shutdown_cluster    switch_workspace
+cd_k8s              init_geode_addon    remove_app          shutdown_workspace  vm_copy
+cd_pod              install_bundle      remove_cluster      start_cluster       vm_deploy_bundle
+cd_workspace        kill_cluster        remove_locator      start_locator       vm_exec
+clean_cluster       kill_locator        remove_member       start_member
 ```
 
 :exclamation: There is a well-known bash auto-completion bug in macOS that prepends a backslash if you hit the tab key followed by an environment variable. If this happens to you then a workaround is to add the following command in `.bashrc` or `.bash_profile`. *Note that this is a macOS bash bug and is NOT contributed by `geode-addon`.*
