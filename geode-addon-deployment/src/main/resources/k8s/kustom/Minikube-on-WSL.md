@@ -60,7 +60,7 @@ The above commands are referenced from the following link:
 * Verifying dashboard health ...
 ```
 
-**Solution:** This is due to the WSK Minikube file paths set in one of the above steps. You can set the paths using `kubectl.exe` from PowerShell or reinstall Minikube and make sure to execute `minikue dashboard` before configuring `kubectl` in WSL.
+**Solution:** This is due to the WSL Minikube file paths set in one of the above steps. You can set the paths using `kubectl.exe` from PowerShell or reinstall Minikube and make sure to execute `minikue dashboard` before configuring `kubectl` in WSL.
 
 To configure paths from Powershell:
 
