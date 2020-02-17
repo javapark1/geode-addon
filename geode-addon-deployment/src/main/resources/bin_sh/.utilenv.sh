@@ -407,6 +407,34 @@ function isPodExist
 }
 
 # 
+# Returns "true" if the specified docker cluster exists. Otherwise, "false".
+# @required DOCKER_DIR
+# @param    dockerClusterName
+#
+function isDockerExist
+{
+   if [ -d "$DOCKER_DIR/$1" ]; then
+      echo "true"
+   else
+      echo "false"
+   fi
+}
+
+# 
+# Returns "true" if the specified k8s cluster exists. Otherwise, "false".
+# @required K8S_DIR
+# @param    dockerClusterName
+#
+function isK8sExist
+{
+   if [ -d "$K8S_DIR/$1" ]; then
+      echo "true"
+   else
+      echo "false"
+   fi
+}
+
+# 
 # Returns "true" if the specified app exists. Othereise, "false".
 # @required APPS_DIR
 # @param clusterName
@@ -1255,10 +1283,15 @@ function cd_pod
    fi
 }
 
+#
+# Returns a list of relevant commands for the specified filter.
+#
+# @required SCRIPT_DIR    Script directory path in which the specified filter is to be applied.
+# @param    commandFilter Commands to filter in the script directory.
+#
 function getSeeAlsoList
 {
    local FILTER=$1
-   local EXCLUDE=$2
    local COMMANDS=`ls $SCRIPT_DIR/$FILTER`
    echo $COMMANDS
 }

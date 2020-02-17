@@ -144,7 +144,7 @@ cat <<EOF
 
 $CLUSTER
 ├── .env
-├── README-Docker.md
+├── README.md
 ├── docker-compose.yaml
 └── geode-addon
     ├── etc
@@ -154,7 +154,7 @@ $CLUSTER
 EOF
 echo -e "Please follow the instructions in the ${CLightGreen}$DOCKER_DOC${CNone} document."
 echo -e "  - Change environment variables in the ${CLightGreen}.env${CNone} file as needed."
-echo -e "  - Configure locator(s) and servers (memvers) as needed in the ${CLightGreen}docker-compose.yaml${CNone} file as needed."
+echo -e "  - Configure locator(s) and servers (members) as needed in the ${CLightGreen}docker-compose.yaml${CNone} file as needed."
 echo "To start Docker cluster:"
 echo -e "   ${CLightGreen}cd_docker $CLUSTER${CNone}"
 echo -e "   ${CLightGreen}docker-compose up${CNone}"

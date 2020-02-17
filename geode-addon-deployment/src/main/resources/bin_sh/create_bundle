@@ -206,7 +206,7 @@ else
       if  [ "`isDockerExist $DOCKER`" == "false" ]; then 
          echo "----------------------------------------------------------------"
          echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-         echo "    ERROR: Undefined Docker: [$K8S]. Command aborted."
+         echo "    ERROR: Undefined Docker: [$DOCKER]. Command aborted."
          echo "----------------------------------------------------------------"
          exit 1
       fi
@@ -221,7 +221,7 @@ else
      DOCKER_CLUSTERS=$DOCKER
    fi
    if [ "$K8S" != "" ]; then
-      if  [ "`isK8SExist $K8S`" == "false" ]; then 
+      if  [ "`isK8sExist $K8S`" == "false" ]; then 
          echo "----------------------------------------------------------------"
          echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "    ERROR: Undefined Kubernetes: [$K8S]. Command aborted."
@@ -323,7 +323,7 @@ for POD in $PODS; do
    fi
 done
 
-# docker clusters
+# k8s clusters
 for K8S in $K8S_CLUSTERS; do
    K8S_DIR=$K8S_DIR/$K8S
    mkdir -p $TMP_BUNDLE_DIR/k8s/$K8S

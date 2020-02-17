@@ -39,7 +39,7 @@ __get_cluster()
 
 __geode_addon_complete()
 {
-   local cur_word prev_word type_list commands len
+   local second_word cur_word prev_word type_list commands len
 
    # COMP_WORDS is an array of words in the current command line.
    # COMP_CWORD is the index of the current word (the one the cursor is
@@ -73,13 +73,13 @@ __geode_addon_complete()
       ;;
 
    -port)
-      if [ "$command" == "create_cluster" ]; then
+      if [ "$second_word" == "create_cluster" ]; then
          type_list="$DEFAULT_LOCATOR_START_PORT"
       fi
      ;;
 
    -id)
-      if [ "$command" == "create_cluster" ]; then
+      if [ "$second_word" == "create_cluster" ]; then
          type_list="-1 1 2 3 4 5 6 7 8 9"
       fi
      ;;
@@ -93,6 +93,18 @@ __geode_addon_complete()
          __ENV="clusters"
       fi
       type_list=`getClusters $__ENV`
+      ;;
+
+   -k8s) 
+      type_list=`getClusters k8s`
+      ;;
+
+   -docker) 
+      if [ "$second_word" == "create_bundle" ]; then
+         type_list=`getClusters docker`
+      else
+         type_list="compose"
+      fi
       ;;
 
    -workspace)
@@ -361,7 +373,8 @@ __command_complete()
          type_list=`getApps`
       fi
       ;;
-   -cluster) if [ "$command" == "create_k8s" ]; then
+   -cluster) 
+      if [ "$command" == "create_k8s" ]; then
          __ENV="k8s"
       elif [ "$command" == "create_docker" ]; then
          __ENV="docker"
@@ -374,7 +387,11 @@ __command_complete()
       type_list=`getClusters k8s`
       ;;
    -docker) 
-      type_list=`getClusters docker`
+      if [ "$command" == "create_bundle" ]; then
+         type_list=`getClusters docker`
+      else
+         type_list="compose"
+      fi
       ;;
    -workspace)
       if [ "$command" != "create_workspace" ]; then
