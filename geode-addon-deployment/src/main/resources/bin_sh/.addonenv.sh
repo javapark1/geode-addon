@@ -366,6 +366,12 @@ fi
 if [ -z $POD_DIR ]; then
    POD_DIR=$PODS_DIR/$POD
 fi
+if [ -z $DOCKER_DIR ]; then
+   DOCKER_DIR=$GEODE_ADDON_WORKSPACE/docker
+fi
+if [ -z $K8S_DIR ]; then
+   K8S_DIR=$GEODE_ADDON_WORKSPACE/k8s
+fi
 if [ -z $APPS_DIR ]; then
    APPS_DIR=$BASE_DIR/apps
 fi

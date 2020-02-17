@@ -30,7 +30,9 @@ CREATE_SCRIPT=false
 POD_SPECIFIED=false
 POD_TYPE=
 K8S=
+K8S_SPECIFIED=false
 DOCKER=
+DOCKER_SPECIFIED=false
 COUNT=
 VERSION_SPECIFIED=false
 MAN_SPECIFIED=false
@@ -133,8 +135,10 @@ do
       PASSWORD=$i
    elif [ "$PREV" == "-k8s" ]; then
       K8S=$i
+      K8S_SPECIFIED=true
    elif [ "$PREV" == "-docker" ]; then
       DOCKER=$i
+      DOCKER_SPECIFIED=true
    elif [ "$PREV" == "-group" ]; then
       GROUP=$i
    elif [ "$PREV" == "-clustergroup" ]; then

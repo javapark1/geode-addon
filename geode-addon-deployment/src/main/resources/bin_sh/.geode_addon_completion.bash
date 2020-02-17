@@ -370,6 +370,12 @@ __command_complete()
       fi
       type_list=`getClusters $__ENV`
       ;;
+   -k8s) 
+      type_list=`getClusters k8s`
+      ;;
+   -docker) 
+      type_list=`getClusters docker`
+      ;;
    -workspace)
       if [ "$command" != "create_workspace" ]; then
          type_list=`getWorkspaces`

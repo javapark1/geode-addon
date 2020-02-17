@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -pod -app -all -quiet -?"
+   echo "-cluster -pod -k8s -docker -app -all -quiet -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -26,7 +26,13 @@ NAME
                  modified or added in the current geode-addon workspace
 
 SYNOPSIS
-   $EXECUTABLE [-cluster <cluster-name>] [-pod <pod-name>] [-app <app-name>] [-all] [-quiet] [-?]
+   $EXECUTABLE [-cluster cluster_name]
+               [-pod pod_name] 
+               [-k8s kubernetes_cluster_name] 
+               [-docker docker_cluster_name] 
+               [-app app_name] 
+               [-all] 
+               [-quiet] [-?]
 
 DESCRIPTION
    Creates a bundle tar ball that includes the files that may have been modified or added
@@ -47,7 +53,7 @@ cat <<EOF
         
              clusters/cluster_name/README.md
              clusters/cluster_name/bin_sh/setenv.sh
-             clusters/cluster_name/etc/'*' (files only, no sub-directories)
+             clusters/cluster_name/etc/*
              clusters/cluster_name/lib
              clusters/cluster_name/plugins
 
@@ -58,11 +64,25 @@ cat <<EOF
              pods/pod_name/etc/pod.properties
              pods/pod_name/Vagrantfile
 
+   -k8s kubernetes_cluster_name
+             Kubernetes cluster name. Bundle the following files in the specified k8s cluster.
+
+             k8s/kubernetes_cluster_name/README*
+             k8s/kubernetes_cluster_name/bin_sh/*
+             k8s/kubernetes_cluster_name/etc/*
+
+   -docker docker_cluster_name
+             Docker cluster name. Bundle the following files in the specified docker cluster.
+
+             docker/docker_cluster_name/README*
+             docker/docker_cluster_name/docker-compose.yaml
+             docker/docker_cluster_name/geode-addon/*
+
    -app app_name
              App name. Bundle the following files in the specified app.
 
              apps/app_name/bin_sh/setenv.sh
-             apps/app_name/etc/* (files only, no sub-directories)
+             apps/app_name/etc/*
              apps/app_name/lib
              apps/app_name/plugins
              apps/app_name/export
@@ -70,15 +90,24 @@ cat <<EOF
    -all
              Bundle all files including all clusters, pods and apps.
 
-             clusters/'*'/bin_sh/setenv.sh
-             clusters/'*'/etc/'*' (files only, no sub-directories)
-             clusters/'*'/lib
-             clusters/'*'/plugins
-             apps/'*'/bin_sh/setenv.sh
-             apps/'*'/etc/'*' (files only, no sub-directories)
-             apps/'*'/lib
-             apps/'*'/plugins
-             apps/'*'/export
+             clusters/*/bin_sh/setenv.sh
+             clusters/*/etc/*
+             clusters/*/lib
+             clusters/*/plugins
+             pods/*/bin_sh/setenv.sh
+             pods/*/etc/pod.properties
+             pods/*/Vagrantfile
+             k8s/README*
+             k8s/bin_sh/*
+             k8s/etc/*
+             docker/README*
+             docker/docker-compose.yaml
+             docker/geode-compose/*
+             apps/*/bin_sh/setenv.sh
+             apps/*/etc/*
+             apps/*/lib
+             apps/*/plugins
+             apps/*/export
 
    -quiet
              Do not verbose.
@@ -126,13 +155,15 @@ TIMESTAMP=`date +%y%m%d-%H%M%S`
 if [ "$ALL" = "true" ]; then
    CLUSTERS=`ls -A $CLUSTERS_DIR`
    PODS=`ls -A $PODS_DIR`
+   DOCKER_CLUSTERS=`ls -A $DOCKER_DIR`
+   K8S_CLUSTERS=`ls -A $K8S_DIR`
    APPS=`ls -A $APPS_DIR`
    BUNDLE_TAR_FILE_PATH=$BUNDLE_DIR/bundle-${CLUSTER_TYPE}-${GEODE_VERSION}-all-${TIMESTAMP}.tar.gz
 else
    FILE_PREFIX=""
    FILE_POSTFIX=""
    INCLUDE_CLUSTER="false"
-   if ( [ "$APP_SPECIFIED" == "false" ] && [ "$POD_SPECIFIED" == "false" ] ) ||
+   if ( [ "$APP_SPECIFIED" == "false" ] && [ "$POD_SPECIFIED" == "false" ] &&  [ "$DOCKER_SPECIFIED" == "false" ] &&  [ "$K8S_SPECIFIED" == "false" ]) ||
       ( [ "$CLUSTER_SPECIFIED" == "true" ] ); then
       INCLUDE_CLUSTER="true"
    fi
@@ -170,6 +201,42 @@ else
       fi
       FILE_POSTFIX="${FILE_POSTFIX}$POD"
      PODS=$POD
+   fi
+   if [ "$DOCKER" != "" ]; then
+      if  [ "`isDockerExist $DOCKER`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo "    ERROR: Undefined Docker: [$K8S]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      if [ "$FILE_PREFIX" != "" ]; then
+         FILE_PREFIX="${FILE_PREFIX}-"
+      fi
+      FILE_PREFIX="${FILE_PREFIX}docker"
+      if [ "$FILE_POSTFIX" != "" ]; then
+         FILE_POSTFIX="${FILE_POSTFIX}-"
+      fi
+      FILE_POSTFIX="${FILE_POSTFIX}$DOCKER"
+     DOCKER_CLUSTERS=$DOCKER
+   fi
+   if [ "$K8S" != "" ]; then
+      if  [ "`isK8SExist $K8S`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo "    ERROR: Undefined Kubernetes: [$K8S]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      if [ "$FILE_PREFIX" != "" ]; then
+         FILE_PREFIX="${FILE_PREFIX}-"
+      fi
+      FILE_PREFIX="${FILE_PREFIX}k8s"
+      if [ "$FILE_POSTFIX" != "" ]; then
+         FILE_POSTFIX="${FILE_POSTFIX}-"
+      fi
+      FILE_POSTFIX="${FILE_POSTFIX}$K8S"
+     K8S_CLUSTERS=$K8S
    fi
    if [ "$APP" != "" ]; then
       if  [ "`isAppExist $APP`" == "false" ]; then 
@@ -242,7 +309,7 @@ for POD in $PODS; do
    POD_DIR=$PODS_DIR/$POD
    mkdir -p $TMP_BUNDLE_DIR/pods/$POD
    cp -f $POD_DIR/Vagrantfile $TMP_BUNDLE_DIR/pods/$POD/ > /dev/null 2>&1
-   if [ -d $POD_DIR/README.md ]; then
+   if [ -f $POD_DIR/README.md ]; then
       # README.md
       cp $POD_DIR/README.md $TMP_BUNDLE_DIR/pods/$POD/ > /dev/null 2>&1
    fi
@@ -253,6 +320,33 @@ for POD in $PODS; do
    if [ -d $POD_DIR/etc ]; then
       # etc
       cp -r $POD_DIR/etc $TMP_BUNDLE_DIR/pods/$POD/ > /dev/null 2>&1
+   fi
+done
+
+# docker clusters
+for K8S in $K8S_CLUSTERS; do
+   K8S_DIR=$K8S_DIR/$K8S
+   mkdir -p $TMP_BUNDLE_DIR/k8s/$K8S
+   cp -f $K8S_DIR/README* $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
+   if [ -d $K8S_DIR/bin_sh ]; then
+      # bin_sh
+      cp -r $K8S_DIR/geode-addon $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
+   fi
+   if [ -d $K8S_DIR/etc ]; then
+      # etc
+      cp -r $K8S_DIR/etc $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
+   fi
+done
+
+# docker clusters
+for DOCKER in $DOCKER_CLUSTERS; do
+   DOCKER_DIR=$DOCKER_DIR/$DOCKER
+   mkdir -p $TMP_BUNDLE_DIR/docker/$DOCKER
+   cp -f $DOCKER_DIR/README* $TMP_BUNDLE_DIR/docker/$DOCKER/ > /dev/null 2>&1
+   cp -f $DOCKER_DIR/docker-compose.yaml $TMP_BUNDLE_DIR/docker/$DOCKER/ > /dev/null 2>&1
+   if [ -d $DOCKER_DIR/geode-addon ]; then
+      # geode-addon
+      cp -r $DOCKER_DIR/geode-addon $TMP_BUNDLE_DIR/docker/$DOCKER/ > /dev/null 2>&1
    fi
 done
 
