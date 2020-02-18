@@ -50,30 +50,33 @@ Workspaces are consolidated under a single directory specified by the `GEODE_ADD
 You can install `geode-addon` anywhere in the file system. The `init_geode_addon` command interactively guides you through the installation process. The following example installs `geode-addon` in the `~/Geode` directory. 
 
 ```console
-# 1. Untar the geode-addon distribution tarball.
-mkdir ~/Geode
-tar -C ~/Geode/ -xzf geode-addon_0.9.0-SNAPSHOT.tar.gz
+# 1. Build geode-addon
+./build_dist.sh
 
-# 2. Initialize geode-addon. init_geode_addon is an interactive command
+# 2. Untar the geode-addon distribution tarball.
+mkdir ~/Geode
+tar -C ~/Geode/ -xzf geode-addon-deployment/target/assembly/geode-addon_0.9.0-SNAPSHOT.tar.gz
+
+# 3. Initialize geode-addon. init_geode_addon is an interactive command
 #    that prompts for the workspaces directory and required software 
 #    installation paths. Note that the -path option is specified for our demo.
 ~/Geode/geode-addon_0.9.0-SNAPSHOT/bin_sh/init_geode_addon -path ~/Geode/workspaces
 
-# 3. Source in the workspaces initenv.sh file which sets your workspaces-wide environment
+# 4. Source in the workspaces initenv.sh file which sets your workspaces-wide environment
 #    variables. If you want to make this workspaces directory default then add the
 #    following line ~/.bashrc, ~/.bash_profile, etc.
 . ~/Geode/workspaces/initenv.sh
 
-# 4. The 'init_geode_addon' command created the default workspace named 'myws' and
+# 5. The 'init_geode_addon' command created the default workspace named 'myws' and
 #    the default cluster named 'mygeode'. Let's switch to and start the 'mygeode' cluster.
 switch_cluster mygeode
 start_cluster
 
-# 5. Create a copy of the default app, perf_test. To create other apps, use the '-app' option.
+# 6. Create a copy of the default app, perf_test. To create other apps, use the '-app' option.
 #    You can have more than one copy of the same app.
 create_app
 
-# 6. Change directory to perf_test and run its scripts to ingest mock data.
+# 7. Change directory to perf_test and run its scripts to ingest mock data.
 cd_app perf_test; cd bin_sh
 ./test_ingestion -run
 ./test_tx -run
