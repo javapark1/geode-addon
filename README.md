@@ -1,6 +1,87 @@
 # Apache Geode/Pivotal GemFire Addon Distribution
 
-The `geode-addon` repo contains Apache Geode/Pivotal GemFire specific tools and addons that supplement the Apache Geode/Pivotal GemFire products.
+## Introduction
+
+`geode-addon` greatly simplifies your Geode/GemFire environment by allowing you to create workspaces on just about any hardware with Linux/Unix or Windows OS installed. You can think of a workspace as a sandbox in which you can safely make changes to Geode/GemFire clusters and apps without affecting other workspaces. A workspace may have one or more clusters and apps that are separately configured and readily runnable. You can have any number of workspaces, each with different versions of Geode/GemFire or apps, running different use cases with tailored configurations to run on your laptop, remote VMs, Kubernetes and Docker clusters. You can, for example, create a workspace that federates multiple Geode/GemFire clusters serving inventory and sales data, a workspace that handles streamed data into the federated clusters via Spark, and yet another workspace that integrates data analytics tools for performing AI/ML operations. 
+
+`geode-addon` consolidates your workspaces into a single operations center. You can switch between workspaces and clusters on the fly, check their status in short or long descriptions, shutdown a cluster or all the clusters in a workspace with a single command, and create workspace snapshots in the form of bundles for preserving them and recreating them later. Bundles serve many purposes. You can share your environment configurations with others by taking a snapshot of all or a portion of your workspace. You can create and deploy a bundle that contains a readily runnable workspace that has been tested and integrated with third party applications. You can capture your current cloud environment in a bundle and reinstate the exact image in the cloud later. Bundles can backup your environment, contain applications, versioned clusters, development/QA/production configurations, full-blown use cases, demoware, test suites, monitoring tools, etc.
+
+`geode-addon` provides online bundles that are readily available and runnable. You can list them by running the `show_bundle -header` command and install them by running `install-bundle -download` command. They are kept in the following repo.
+
+[https://github.com/javapark1/geode-addon-bundles](https://github.com/javapark1/geode-addon-bundles)
+
+## Creating Workspace and Starting Cluster
+
+Working in a workspace is as simple as creating one and starting up a cluster. The example shown below creates the workspace named `my-workspace` and starts the `inventory` cluster. As the example demonstrates, you can switch between workspaces and clusters on the fly. All `geode-addon` commands include full support for [bash auto-completion](#bash-auto-completion) and man pages.
+
+```console
+create_workspace -name my-workspace
+switch_workspace my-workspace
+create_cluster -cluster inventory
+switch_cluster inventory
+start_cluster
+```
+
+### Viewing and Installing Online Bundles
+
+```console
+show_bundle -header
+install_bundle -download bundle-geode-1.11.0-cluster-app-mysql-perf_test_mysql.tar.gz
+```
+
+## Hazelcast Addon
+
+In addition to `geode-addon`, `hazelcast-addon` is also available for Hazelcast users. If you are looking for a way to compare Geode/GemFire and Hazelcast, check out the [`perf_test`](geode-addon-deployment/src/main/resources/apps/perf_test) app in both addons.
+
+[https://github.com/javapark1/hazelcast-addon](https://github.com/javapark1/hazelcast-addon)
+
+## Quick Start
+
+The `geode-addon` installation process has been simplified by introducing the concept of workspace. A workspace is essentially a directory in which `geode-addon` runs all of its commands. All of your work is stored in the workspace. It is completely isolated and detached from the `geode-addon` directory providing the freedom to make changes without interfering with `geode-addon` and other workspaces. You can have any number of workspaces and run multiple workspaces at the same time.
+
+Workspaces are consolidated under a single directory specified by the `GEODE_ADDON_WORKSPACES_HOME` environment variable. This variable is automatically set when you initialize the `geode-addon` environment by running the `init_geode_addon` command. The workspace consolidation provides a simple and quick way to switch between workspaces by executing the `switch_workspace` command. There are other convenience commands such as `cd_workspace` to change directory to the specified workspace, `list_workspace` to list all workspaces, and etc.
+
+`geode-addon` supports both Geode and GemFire distributions. Make sure to install one of them and JDK before proceeding with the `geode-addon` quick-start steps shown below.
+
+- [JDK 1.8_121+](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
+- [Geode](https://geode.apache.org/releases/) - Open source.
+- [GemFire](https://network.pivotal.io/products/pivotal-gemfire) - Pivotal GemFire.
+
+You can install `geode-addon` anywhere in the file system. The `init_geode_addon` command interactively guides you through the installation process. The following example installs `geode-addon` in the `~/Geode` directory. 
+
+```console
+# 1. Untar the geode-addon distribution tarball.
+mkdir ~/Geode
+tar -C ~/Geode/ -xzf geode-addon_0.9.0-SNAPSHOT.tar.gz
+
+# 2. Initialize geode-addon. init_geode_addon is an interactive command
+#    that prompts for the workspaces directory and required software 
+#    installation paths. Note that the -path option is specified for our demo.
+~/Geode/geode-addon_0.9.0-SNAPSHOT/bin_sh/init_geode_addon -path ~/Geode/workspaces
+
+# 3. Source in the workspaces initenv.sh file which sets your workspaces-wide environment
+#    variables. If you want to make this workspaces directory default then add the
+#    following line ~/.bashrc, ~/.bash_profile, etc.
+. ~/Geode/workspaces/initenv.sh
+
+# 4. The 'init_geode_addon' command created the default workspace named 'myws' and
+#    the default cluster named 'mygeode'. Let's switch to and start the 'mygeode' cluster.
+switch_cluster mygeode
+start_cluster
+
+# 5. Create a copy of the default app, perf_test. To create other apps, use the '-app' option.
+#    You can have more than one copy of the same app.
+create_app
+
+# 6. Change directory to perf_test and run its scripts to ingest mock data.
+cd_app perf_test; cd bin_sh
+./test_ingestion -run
+./test_tx -run
+```
+
+The `geode-addon` distribution also includes out-of-the-box support for Grafana and Prometheus. You can monitor the cluster using the included `grafana` app.
+
+[Go To Grafana App](geode-addon-deployment/src/main/resources/apps/grafana)
 
 ## Addon Components
 
@@ -105,54 +186,6 @@ cd_app perf_test; cd bin_sh
 ```
 
 [Go To Apps](geode-addon-deployment/src/main/resources/apps/)
-
-## Quick Start
-
-The `geode-addon` installation process has been simplified by introducing the concept of workspace. A workspace is essentially a directory in which `geode-addon` runs all of its commands. All of your work is stored in the workspace. It is completely isolated and detached from the `geode-addon` directory providing the freedom to make changes without interfering with `geode-addon` and other workspaces. You can have any number of workspaces and run multiple workspaces at the same time.
-
-Workspaces are consolidated under a single directory specified by the `GEODE_ADDON_WORKSPACES_HOME` environment variable. This variable is automatically set when you initialize the `geode-addon` environment by running the `init_geode_addon` command. The workspace consolidation provides a simple and quick way to switch between workspaces by executing the `switch_workspace` command. There are other convenience commands such as `cd_workspace` to change directory to the specified workspace, `list_workspace` to list all workspaces, and etc.
-
-`geode-addon` supports both Geode and GemFire distributions. Make sure to install one of them and JDK before proceeding with the `geode-addon` quick-start steps shown below.
-
-- [JDK 1.8_121+](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
-- [Geode](https://geode.apache.org/releases/) - Open source.
-- [GemFire](https://network.pivotal.io/products/pivotal-gemfire) - Pivotal GemFire.
-
-You can install `geode-addon` anywhere in the file system. The `init_geode_addon` command interactively guides you through the installation process. The following example installs `geode-addon` in the `~/Geode` directory. 
-
-```console
-# 1. Untar the geode-addon distribution tarball.
-mkdir ~/Geode
-tar -C ~/Geode/ -xzf geode-addon_0.9.0-SNAPSHOT.tar.gz
-
-# 2. Initialize geode-addon. init_geode_addon is an interactive command
-#    that prompts for the workspaces directory and required software 
-#    installation paths. Note that the -path option is specified for our demo.
-~/Geode/geode-addon_0.9.0-SNAPSHOT/bin_sh/init_geode_addon -path ~/Geode/workspaces
-
-# 3. Source in the workspaces initenv.sh file which sets your workspaces-wide environment
-#    variables. If you want to make this workspaces directory default then add the
-#    following line ~/.bashrc, ~/.bash_profile, etc.
-. ~/Geode/workspaces/initenv.sh
-
-# 4. The 'init_geode_addon' command created the default workspace named 'myws' and
-#    the default cluster named 'mygeode'. Let's switch to and start the 'mygeode' cluster.
-switch_cluster mygeode
-start_cluster
-
-# 5. Create a copy of the default app, perf_test. To create other apps, use the '-app' option.
-#    You can have more than one copy of the same app.
-create_app
-
-# 6. Change directory to perf_test and run its scripts to ingest mock data.
-cd_app perf_test; cd bin_sh
-./test_ingestion -run
-./test_tx -run
-```
-
-The `geode-addon` distribution also includes out-of-the-box support for Grafana and Prometheus. You can monitor the cluster using the included `grafana` app.
-
-[Go To Grafana App](geode-addon-deployment/src/main/resources/apps/grafana)
 
 ## Managing Geode/GemFire Clusters
 
