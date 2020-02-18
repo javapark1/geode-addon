@@ -4,12 +4,6 @@ This article describes how to create a Docker environment and launch a Geode clu
 
 :exclamation: You must first install Docker and Docker Compose. See [References](#References) for download links.
 
-## Install `apachegeode/geode` Image
-
-```console
-docker pull apachegeode/geode
-```
-
 ## Create `geode-addon` Docker Cluster
 
 ```console
