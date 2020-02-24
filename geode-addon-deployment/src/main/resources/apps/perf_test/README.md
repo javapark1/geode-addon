@@ -152,10 +152,10 @@ To use `CacheWriterLoaderPkDbImpl `, you must first build the environment by exe
 ./build_app
 ```
 
-Upon successful build, you must also configure the cluster in `geode.xml` file as follows:
+Upon successful build, you must also configure the cluster in `cache.xml` file as follows:
 
 ```console
-# Edit geode.xml
+# Edit cache.xml
 vi $GEODE_ADDON_WORKSPACE/clusters/<your-cluster>/etc/cache.xml
 ```
 
