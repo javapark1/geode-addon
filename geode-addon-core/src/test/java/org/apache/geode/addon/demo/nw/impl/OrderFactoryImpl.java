@@ -1,6 +1,6 @@
 package org.apache.geode.addon.demo.nw.impl;
 
-import java.util.Random;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.geode.addon.demo.nw.data.Order;
@@ -11,31 +11,40 @@ import com.github.javafaker.Company;
 import com.github.javafaker.Faker;
 
 public class OrderFactoryImpl extends AbstractDataObjectFactory {
-	
+
 	private Faker faker = new Faker();
-	private Random random = new Random();
+	private String customerIdPrefix;
+	private int customerIdMax;
+
+	@Override
+	public void initialize(Properties props) {
+		super.initialize(props);
+		customerIdPrefix = props.getProperty("factory.customerId.prefix", "000000-");
+		String customerIdMaxStr = props.getProperty("factory.customerId.max", "100");
+		customerIdMax = Integer.parseInt(customerIdMaxStr);
+	}
 
 	public Order createOrder() {
 		Order order = new Order();
 		Company company = faker.company();
 		order.setCustomerId(faker.idNumber().invalidSvSeSsn());
 		order.setEmployeeId(faker.idNumber().invalidSvSeSsn());
-		order.setFreight(200*random.nextDouble());
+		order.setFreight(200 * random.nextDouble());
 		order.setOrderDate(faker.date().past(7, TimeUnit.DAYS));
 		order.setOrderId(faker.idNumber().invalidSvSeSsn());
-		order.setRequiredDate(faker.date().future(20, TimeUnit.DAYS));
+		order.setRequiredDate(faker.date().future(10, TimeUnit.DAYS, order.getOrderDate()));
 		Address address = faker.address();
 		order.setShipAddress(address.fullAddress());
 		order.setShipCity(address.city());
 		order.setShipCountry(address.country());
 		order.setShipName(company.name());
-		order.setShippedDate(faker.date().past(4, TimeUnit.DAYS));
+		order.setShippedDate(faker.date().future(14, TimeUnit.DAYS, order.getOrderDate()));
 		order.setShipPostalCode(address.zipCode());
 		order.setShipRegion(address.stateAbbr());
 		order.setShipVia(Integer.toString(random.nextInt(5) + 1));
 		return order;
 	}
-	
+
 	/**
 	 * Returns an entry with the specified idNum as part of the primary key
 	 */
@@ -45,6 +54,8 @@ public class OrderFactoryImpl extends AbstractDataObjectFactory {
 		if (isKeyRandom == false) {
 			order.setOrderId(createKey(idNum));
 		}
-		return new DataObjectFactory.Entry(order.getOrderId(), order);
+		order.setCustomerId(createForeignKey(customerIdPrefix, customerIdMax));
+		String key = order.getOrderId() + "." + order.getCustomerId();
+		return new DataObjectFactory.Entry(key, order);
 	}
 }

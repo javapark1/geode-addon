@@ -1,6 +1,7 @@
 package org.apache.geode.addon.demo.nw.impl;
 
 import java.util.Properties;
+import java.util.Random;
 
 import org.apache.geode.addon.test.perf.data.DataObjectFactory;
 
@@ -11,6 +12,7 @@ public abstract class AbstractDataObjectFactory implements DataObjectFactory {
 	protected boolean isKeyRandom;
 	protected int keyLength = 10;
 	protected boolean isKeyLeadingZeros;
+	protected Random random = new Random();
 
 	@Override
 	public void initialize(Properties props) {
@@ -82,6 +84,20 @@ public abstract class AbstractDataObjectFactory implements DataObjectFactory {
 			return keyPrefix + str;
 		} else {
 			return keyPrefix + idNum;
+		}
+	}
+	
+	protected String createForeignKey(String foreignKeyPrefix, int foreignKeyMax) {
+		int val = random.nextInt(foreignKeyMax);
+		if (isKeyLeadingZeros) {
+			String str = Integer.toString(val);
+			int leadingZeroCount = keyLength - foreignKeyPrefix.length() - str.length();
+			for (int i = 0; i < leadingZeroCount; i++) {
+				str = "0" + str;
+			}
+			return foreignKeyPrefix + str;
+		} else {
+			return foreignKeyPrefix + val;
 		}
 	}
 }

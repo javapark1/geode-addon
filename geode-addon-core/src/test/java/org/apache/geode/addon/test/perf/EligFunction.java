@@ -41,7 +41,7 @@ import org.apache.geode.internal.cache.LocalDataSet;
 public class EligFunction implements Function, Declarable {
 	private static final long serialVersionUID = 1L;
 
-	public final static String ID = "EligFunction";
+	public final static String ID = "addon.EligFunction";
 
 	private Cache cache;
 	private String ELIG_QUERY = "select e.key,e.value from /eligibility.entrySet e where e.key.groupNumber=$1";

@@ -67,6 +67,9 @@ http://geode.apache.org/schema/cache/cache-1.0.xsd"
 	<!-- EligFunction invoked by TransationTest (bin_sh/test_tx). -->
 	<function-service>
 		<function>
+			<class-name>org.apache.geode.addon.function.QueryFunction</class-name>
+		</function>
+		<function>
 			<class-name>org.apache.geode.addon.test.perf.EligFunction</class-name>
 		</function>
 	</function-service>
