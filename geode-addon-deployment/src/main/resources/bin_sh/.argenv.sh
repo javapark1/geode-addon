@@ -37,6 +37,7 @@ COUNT=
 VERSION_SPECIFIED=false
 MAN_SPECIFIED=false
 CLUSTER_SPECIFIED=false
+FG_SPECIFIED=false
 MEMBER_NUM=1
 MEMBER_NUM_SPECIFIED=false
 REMOTE_SPECIFIED=false
@@ -178,6 +179,8 @@ do
       VERSION_SPECIFIED=true
    elif [ "$i" == "-man" ]; then
       MAN_SPECIFIED=true
+   elif [ "$i" == "-fg" ]; then
+      FG_SPECIFIED=true
    elif [ "$i" == "-simulate" ]; then
       SIMULATE=true
    elif [ "$i" == "-preview" ]; then

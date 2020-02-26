@@ -192,7 +192,7 @@ fi
 # Copy the template xml file into the cluster etc directory if the
 # cluster is missing the cache.xml file. This may occur for those
 # clusters that are bundled in the geode-addon distribution.
-if [ ! -f $ETC_DIR/geode.xml ]; then
+if [ ! -f $ETC_DIR/cache.xml ]; then
    cp $BASE_DIR/etc/template-cache.xml $ETC_DIR/cache.xml
 fi
 

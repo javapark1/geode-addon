@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -num -simulate -create-script -?"
+   echo "-cluster -num -fg -simulate -create-script -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Display member configuration information in the specified geode-addon cluster
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-num member_number] [-simulate] [-create-script] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-num member_number] [-fg] [-simulate] [-create-script] [-?]
 
 DESCRIPTION
    Displays Geode member configuration information. The displayed
@@ -38,6 +38,10 @@ OPTIONS
 
    -num member_number
              Member number 1-99.
+
+   -fg
+             Run the member in the foreground until it is fully initialized and started. If this
+             option is not specified, then by default, it starts the member in the background.
 
    -simulate
              If specified then it only displays the member information
@@ -75,6 +79,12 @@ fi
 # Get workspace name
 WORKSPACE=${GEODE_ADDON_WORKSPACE##*/}
 
+# Set FG_OPT
+if [ "$SIMULATE" == "true" ]; then
+   FG_OPT="-fg"
+else
+   FG_OPT=""
+fi
 # Set -simulate if specified
 if [ "$SIMULATE" == "true" ]; then
    SIMULATE_OPT="-simulate"
@@ -147,7 +157,7 @@ if [ "$REMOTE_SPECIFIED" == "false" ]; then
          let __MEMBER_NUMBER=__MEMBER_NUMBER+1
          if [ $__MEMBER_NUMBER -eq $MEMBER_NUM_NO_LEADING_ZERO ]; then
             __FOUND="true"
-            ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $SCRIPT_DIR/start_member $SIMULATE_OPT $CREATE_SCRIPT_OPT -cluster $CLUSTER -remote $VM_HOST -workspace $GEODE_ADDON_WORKSPACE -num 1"
+            ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $SCRIPT_DIR/start_member $FG_OPT $SIMULATE_OPT $CREATE_SCRIPT_OPT -cluster $CLUSTER -remote $VM_HOST -workspace $GEODE_ADDON_WORKSPACE -num 1"
             break;
          fi
       done
@@ -474,10 +484,18 @@ else
       mkdir -p $STATS_DIR
    fi
    if [ "$RUN_SCRIPT" != "" ]; then
-      $RUN_SCRIPT >> $LOG_FILE &
+      if [ "$FG_SPECIFIED" == "true" ]; then
+         $RUN_SCRIPT >> $LOG_FILE
+      else
+         $RUN_SCRIPT >> $LOG_FILE &
+      fi
    else
-   echo gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH
-   gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH
+      echo gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH
+      if [ "$FG_SPECIFIED" == "true" ]; then
+         gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH
+      else
+         gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH &
+      fi
    fi
    PID=`getMemberPid $MEMBER $WORKSPACE`
 fi

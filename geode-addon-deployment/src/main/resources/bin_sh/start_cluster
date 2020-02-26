@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -?"
+   echo "-cluster -fg -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -33,6 +33,11 @@ DESCRIPTION
 OPTIONS
    -cluster cluster_name
              Cluster name.
+
+   -fg
+             Run each member in the foreground serially until each member is fully initialized
+             started. If this options is not specified, then by default, it starts the members
+             in the background. Note that it always starts the locators in the foreground.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -163,7 +168,7 @@ for i in ${MEMBER_PREFIX}*; do
       let COUNT=COUNT+1
       pushd $i > /dev/null 2>&1
       MEMBER_NUMBER=${i:$MEMBER_PREFIX_LEN}
-      start_member -cluster $CLUSTER -num $MEMBER_NUMBER
+      start_member -cluster $CLUSTER -num $MEMBER_NUMBER $*
       popd > /dev/null 2>&1
    fi
    if [ "$POD" != "local" ]; then

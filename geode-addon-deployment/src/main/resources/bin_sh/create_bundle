@@ -152,11 +152,17 @@ mkdir -p $TMP_BUNDLE_DIR
 #
 
 TIMESTAMP=`date +%y%m%d-%H%M%S`
+DOCKER_CLUSTERS=""
+K8S_CLUSTERS=""
 if [ "$ALL" = "true" ]; then
    CLUSTERS=`ls -A $CLUSTERS_DIR`
    PODS=`ls -A $PODS_DIR`
-   DOCKER_CLUSTERS=`ls -A $DOCKER_DIR`
-   K8S_CLUSTERS=`ls -A $K8S_DIR`
+   if [ -d "$DOCKER_DIR" ]; then
+      DOCKER_CLUSTERS=`ls -A $DOCKER_DIR`
+   fi
+   if [ -d "$K8S_CLUSTERS" ]; then
+      K8S_CLUSTERS=`ls -A $K8S_DIR`
+   fi
    APPS=`ls -A $APPS_DIR`
    BUNDLE_TAR_FILE_PATH=$BUNDLE_DIR/bundle-${CLUSTER_TYPE}-${GEODE_VERSION}-all-${TIMESTAMP}.tar.gz
 else
