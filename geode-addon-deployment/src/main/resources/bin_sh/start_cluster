@@ -89,7 +89,7 @@ if [ "$VM_ENABLED" == "true" ]; then
       VM_KEY="-i $VM_KEY"
    fi
    for VM_HOST in $__LOCATOR_HOSTS; do
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $SCRIPT_DIR/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote $VM_HOST -workspace $GEODE_ADDON_WORKSPACE"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote -workspace $VM_GEODE_ADDON_WORKSPACE"
    done
 
    # Replace , with space
@@ -101,7 +101,7 @@ if [ "$VM_ENABLED" == "true" ]; then
       VM_KEY="-i $VM_KEY"
    fi
    for VM_HOST in $__VM_HOSTS; do
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $SCRIPT_DIR/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote $VM_HOST -workspace $GEODE_ADDON_WORKSPACE"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote -workspace $VM_GEODE_ADDON_WORKSPACE"
    done
    exit
 fi

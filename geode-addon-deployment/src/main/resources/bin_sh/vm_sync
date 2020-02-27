@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-vm -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+#
+# Determeint $TAR_BALL_PATH
+#
+ROOT_DIR_NAME=$(basename $BASE_DIR)
+TOP_DIR="$(dirname "$BASE_DIR")"
+TAR_BALL_GZ_NAME=$ROOT_DIR_NAME.tar.gz
+TAR_BALL_GZ_PATH=$BASE_DIR/bundles/$TAR_BALL_GZ_NAME
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Synchronize the currrent workspace with the VM workspaces
+
+SYNOPSIS
+   $EXECUTABLE [-vm comma_separated_hosts] [-?]
+
+DESCRIPTION
+   Synchronizes the current workspace with VM workspaces. If the VM workspaces
+   do not exist then it remotely creates and synchronizes them. The VM workspace
+   path is defined by VM_GEODE_ADDON_WORKSPACE in the workspace 'setenv.sh' file.
+
+   If the '-vm' option is not specified, then it deploys to the hosts defined
+   by the VM_HOSTS environment variable set in the workspace 'setenv.sh' file.
+   
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+
+OPTIONS
+
+    -vm comma_separated_hosts
+              A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+DEFAULT
+   $EXECUTABLE -cluster $CLUSTER file_path
+EOF
+fi
+cat <<EOF
+
+SEE ALSO
+EOF
+   printSeeAlsoList "vm_*" $EXECUTABLE
+   exit
+fi
+
+WORKSPACE_NAME=$(basename "$GEODE_ADDON_WORKSPACE")
+
+if [ "$VM_ENABLED" != "true" ]; then
+   echo >&2 "ERROR: The cuurent workspace is not VM enabled [$WORKSPACE_NAME]. Command aborted."
+   exit 1
+fi
+
+# Replace , with space
+__VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
+DEFAULT_USER=$(whoami)
+VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
+
+if [ "$KEY" == "" ]; then
+   KEY=`getClusterProperty "vm.privateKeyFile"`
+fi
+VM_KEY=""
+if [ "$KEY" != "" ]; then 
+   if [ ! -f "$KEY" ]; then
+      echo >&2 "ERROR: Specified private key does not exist [$KEY]."
+      echo >&2 "       Command aborted."
+      exit 1
+   fi
+   VM_KEY="-i $KEY"
+fi
+
+# Check if we need to deploy geode-addon to any of the VMs
+ADDON_COMMAND="if [ -d "$VM_GEODE_ADDON_HOME" ]; then echo true; else echo false; fi"
+JAVA_COMMAND="if [ -d "$VM_JAVA_HOME" ]; then echo true; else echo false; fi"
+GEODE_COMMAND="if [ -d "$VM_GEODE_HOME" ]; then echo true; else echo false; fi"
+INSTALL_ADDON_HOST_LIST=""
+for VM_HOST in $__VM_HOSTS; do
+   # geode-addon
+   ADDON_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$ADDON_COMMAND")
+   if [ "$ADDON_EXISTS" == "false" ]; then
+      INSTALL_ADDON_HOST_LIST="$INSTALL_ADDON_HOST_LIST $VM_HOST"
+   fi
+done
+if [ "$INSTALL_ADDON_HOST_LIST" != "" ]; then
+   ROOT_DIR_NAME=$(basename $GEODE_ADDON_HOME)
+   TAR_BALL_GZ_NAME=$ROOT_DIR_NAME.tar.gz
+   TAR_BALL_GZ_PATH=/tmp/$TAR_BALL_GZ_NAME
+   VM_GEODE_ADDON_HOME_PARENT_DIR="$(dirname "$VM_GEODE_ADDON_HOME")"
+   pushd $GEODE_ADDON_HOME/.. > /dev/null 2>&1
+   tar czf $TAR_BALL_GZ_PATH $ROOT_DIR_NAME
+   popd > /dev/null 2>&1
+
+   for VM_HOST in $INSTALL_ADDON_HOST_LIST; do
+      echo "Deploying $ROOT_DIR_NAME to $VM_HOST..."
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
+      scp -q $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+      ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+   done
+fi
+
+echo ""
+
+# Find all existing and new hosts
+EXISTING_HOSTS=
+NEW_HOSTS=
+THIS_VM_HOSTNAME=`hostname`
+COMMAND="if [ -d "$BASE_DIR" ]; then echo true; else echo false; fi"
+EXISTING_HOST_COUNT=0
+NEW_HOST_COUNT=0
+ABS_PATH="$GEODE_ADDON_WORKSPACE"
+TO_PATH="$VM_GEODE_ADDON_WORKSPACE"
+INITENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/initenv.sh" ]; then echo true; else echo false; fi"
+ADDONENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh" ]; then echo true; else echo false; fi"
+SETENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh" ]; then echo true; else echo false; fi"
+
+# Prepare workspace setenv.sh file for VMs
+sed -e 's|export JAVA_HOME=.*$|export JAVA_HOME='\"${VM_JAVA_HOME}\"'|' \
+    -e 's|export GEODE_HOME=.*$|export GEODE_HOME='\"${VM_GEODE_HOME}\"'|' \
+    -e 's|export JET_HOME=.*$|export JET_HOME='\"${VM_JET_HOME}\"'|' \
+    -e 's|export GEODE_ADDON_HOME=.*$|export GEODE_ADDON_HOME='\"${VM_GEODE_ADDON_HOME}\"'|' \
+    $GEODE_ADDON_WORKSPACE/setenv.sh > /tmp/setenv.sh
+
+# Prepare workspaces setenv.sh file for VMs
+sed -e 's|export JAVA_HOME=.*$|export JAVA_HOME='\"${VM_JAVA_HOME}\"'|' \
+    -e 's|export GEODE_HOME=.*$|export GEODE_HOME='\"${VM_GEODE_HOME}\"'|' \
+    -e 's|export JET_HOME=.*$|export JET_HOME='\"${VM_JET_HOME}\"'|' \
+    -e 's|export GEODE_ADDON_HOME=.*$|export GEODE_ADDON_HOME='\"${VM_GEODE_ADDON_HOME}\"'|' \
+    -e 's|export GEODE_ADDON_WORKSPACE=.*$|export GEODE_ADDON_WORKSPACE='\"${VM_GEODE_ADDON_WORKSPACE}\"'|' \
+    $GEODE_ADDON_WORKSPACES_HOME/setenv.sh > /tmp/workspaces_setenv.sh
+
+echo "Workspace sync: $WORKSPACE_NAME"
+for VM_HOST in $__VM_HOSTS; do
+   HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+   if [ "$HOSTNAME" == "" ]; then
+      echo "Invalid host [$VM_HOST]"
+      continue
+   elif [ "$HOSTNAME" == "$THIS_VM_HOSTNAME" ]; then
+      continue
+   fi
+
+   echo "   Synchronizing $VM_HOST..."
+   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $TO_PATH"
+   scp -q -r $VM_KEY $ABS_PATH/.addonenv.sh $ABS_PATH/*.sh $ABS_PATH/apps $ABS_PATH/clusters /tmp/setenv.sh $ABS_PATH/lib $ABS_PATH/plugins $VM_USER@$VM_HOST:$TO_PATH/
+
+   # Configure the workspaces directory if not configured already
+   INITENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$INITENV_COMMAND")
+   ADDONENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$ADDONENV_COMMAND")
+   SETENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$SETENV_COMMAND")
+
+   if [ "$INITENV_EXISTS" != "true" ]; then
+      scp -q -r $VM_KEY $GEODE_ADDON_WORKSPACES_HOME/initenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+   fi
+   if [ "$ADDONENV_EXISTS" != "true" ]; then
+      sed -e 's|export GEODE_ADDON_WORKSPACES_HOME=.*$|export GEODE_ADDON_WORKSPACES_HOME='\"$VM_GEODE_ADDON_WORKSPACES_HOME\"'|' \
+          $GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh > /tmp/.addonenv.sh
+      scp -q -r /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+   fi
+   if [ "$SETENV_EXISTS" != "true" ]; then
+      scp -q -r $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
+   fi
+done
+
+# Remove up temp files
+rm /tmp/setenv.sh  > /dev/null 2>&1
+rm /tmp/.addonenv.sh  > /dev/null 2>&1
+rm /tmp/workspaces_setenv.sh  > /dev/null 2>&1
+
+echo -e "${CLightGreen}Workspace sync complete.${CNone}"
+echo ""
+
+# Determine and display all VMs that do not have Java and Geode installed.
+JAVA_HOME_COMMAND="if [ -d "$VM_JAVA_HOME" ]; then echo true; else echo false; fi"
+GEODE_HOME_COMMAND="if [ -d "$VM_GEODE_HOME" ]; then echo true; else echo false; fi"
+JAVA_HOME_NOT_FOUND_LIST=""
+GEODE_HOME_NOT_FOUND_LIST=""
+for VM_HOST in $__VM_HOSTS; do
+   JAVA_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$JAVA_HOME_COMMAND")
+   GEODE_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$GEODE_HOME_COMMAND")
+   if [ "$JAVA_HOME_EXISTS" == "false" ]; then
+      JAVA_HOME_NOT_FOUND_LIST="$JAVA_HOME_NOT_FOUND_LIST $VM_HOST"
+   fi
+   if [ "$GEODE_HOME_EXISTS" == "false" ]; then
+      GEODE_HOME_NOT_FOUND_LIST="$GEODE_HOME_NOT_FOUND_LIST $VM_HOST"
+   fi
+done
+
+if [ "$JAVA_HOME_NOT_FOUND_LIST" != "" ]; then
+   JAVA_DIR_NAME=$(basename $VM_JAVA_HOME)
+   echo "------------------------------------------------------------------------------------------"
+   echo -e "${CLightRed}WARNING:${CNone}"
+   echo "$VM_JAVA_HOME"
+   echo "   JDK not installed on the following VMs. The workspace will not be operational"
+   echo "   until you install JDK on these VMs."
+   echo "      $JAVA_HOME_NOT_FOUND_LIST"
+   echo "VM Java Home Path:"
+   echo "      $VM_JAVA_HOME"
+   echo "To install Java on the above VMs, download the correct version of JDK and execute 'vm_install'."
+   echo "Example:"
+   echo "   vm_install -java $JAVA_DIR_NAME.tar.gz"
+   echo "------------------------------------------------------------------------------------------"
+fi
+if [ "$GEODE_HOME_NOT_FOUND_LIST" != "" ]; then
+   GEODE_DIR_NAME=$(basename $VM_GEODE_HOME)
+   echo "------------------------------------------------------------------------------------------"
+   echo -e "${CLightRed}WARNING:${CNone}"
+   echo "   Geode is not installed on the following VMs. The workspace will not be operational"
+   echo "   until you install Geode on these VMs."
+   echo "      $GEODE_HOME_NOT_FOUND_LIST"
+   echo "VM Geode Path:"
+   echo "    $VM_GEODE_HOME"
+   echo "To install Geode on the above VMs, download the correct version of JDK and execute 'vm_install'."
+   echo "Example:"
+   echo "   vm_install -geode $GEODE_DIR_NAME.tar.gz"
+   echo "------------------------------------------------------------------------------------------"
+fi

@@ -38,16 +38,20 @@ NAME
                  specified VMs in geode-addon environment
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-key private_key_file] [-vm comma_separated_hosts] [-?] file_path
+   $EXECUTABLE [-cluster cluster_name] [-key private_key_file] [-vm comma_separated_hosts] [-mirror] [-?] file_path
 
 DESCRIPTION
-  Copies the specified file or directory to the same path in the specified VMs.
-  If the file path is a directory then all of the files in the directory
-  are recursively copied.
+   Copies the specified file or directory to the to the specified VMs. The
+   file path can be an absolute or a relative path but it must exist in the
+   workspace directory hiearchy. To copy non-workspace files, specify the 'mirror'
+   'mirror' option, which copies the file to the exact same path as the local path.
 
-  If the '-vm' option is not specified, then it copies the specified file to
-  the hosts defined by the 'vm.locator.hosts' and 'vm.hosts' properties in the
-  etc/cluster.properties file.
+   If the file path is a directory then all of the files in the directory
+   are recursively copied.
+
+   If the '-vm' option is not specified, then it copies the specified file to
+   the hosts defined by the VM_HOSTS environment variable defined in the
+   workspace 'setenv.sh' file.
 
 OPTIONS
 
@@ -62,8 +66,15 @@ OPTIONS
               to supply your private key file. Normally, the private key file is not
               required if you have set public-key authentication.
 
+    -mirror
+              If this option is specified, then the absolute path of the specified
+              file is duplicated in the remote VMs such that both local and remote
+              files paths will be identical. If the absolute path does not exist in
+              the remote VMs, then this command will fail.
+
     file_path
-              File or directory path. Multiple files not supported.
+              File or directory path. Multiple files not supported. If directory, then
+              the entire directory is recursively copied to all the VMs.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -135,12 +146,38 @@ COMMAND="if [ -d "$BASE_DIR" ]; then echo true; else echo false; fi"
 EXISTING_HOST_COUNT=0
 NEW_HOST_COUNT=0
 echo "Copy $ABS_PATH to other VMs."
-if [ -d $ABS_PATH ]; then
-   TO_PATH="$(dirname "$ABS_PATH")"
+if [ "$MIRROR_SPECIFIED" == "true" ]; then
+   if [ -d $ABS_PATH ]; then
+      TO_PATH="$(dirname "$ABS_PATH")"
+   else
+      TO_PATH=$ABS_PATH
+   fi
 else
-   TO_PATH=$ABS_PATH
+   # Determine the path relative to the workspace directory
+   pushd $GEODE_ADDON_WORKSPACE > /dev/null 2>&1
+   WORKSPACE_DIR=$(pwd)
+   popd > /dev/null 2>&1
+   
+   __CRUMB="012345678901234567890" 
+   __ABS_PATH=${ABS_PATH}${__CRUMB}
+   REL_FILE_PATH=${__ABS_PATH##${WORKSPACE_DIR}}
+   if [[ "$REL_FILE_PATH" == "$__ABS_PATH" ]]; then
+      echo >&2 "ERROR: Invalid file. The specified file is not in the current workspace."
+      echo >&2 "       Use the '-mirror' option for copying non-workspace files."
+      echo >&2 "       Command aborted."
+      exit 1
+   else
+      REL_FILE_PATH=${ABS_PATH##${WORKSPACE_DIR}}
+   fi
+   TO_PATH=${VM_GEODE_ADDON_WORKSPACE}${REL_FILE_PATH=$REL_FILE_PATH}
+   if [ -d $ABS_PATH ]; then
+      TO_PATH="$(dirname "$TO_PATH")"
+   fi
 fi
 for VM_HOST in $__VM_HOSTS; do
+   if [ "$VM_HOST" == "$THIS_VM_HOSTNAME" ]; then
+      continue
+   fi
    HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
    if [ "$HOSTNAME" == "" ]; then
       echo "Invalid host [$VM_HOST]"
@@ -153,5 +190,5 @@ for VM_HOST in $__VM_HOSTS; do
    scp -q -r $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
 done
 
-echo "Copy Complete"
+echo "Copy complete."
 echo ""

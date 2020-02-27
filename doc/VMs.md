@@ -1,210 +1,365 @@
 # Running `geode-addon` on VMs and PMs
 
-`geode-addon` provides a simple way to manage Geode/GemFire clusters on laptop, Vagrant pods, and VMs. This article describes how to create and run a Geode/GemFire cluster on multiple VMs and/or PMs (Physical Machines). The instructions provided apply to any VMs and PMs including AWS, Azure, GCP, physical machines, VirtualBox, vSphere, Vagrant pods (VMs), etc. 
+`geode-addon` provides a simple way to manage Geode/GemFire clusters on laptop, Vagrant pods, and VMs. This article describes how to create and run a Geode/GemFire cluster on multiple VMs and/or PMs (Physical Machines). The instructions provided apply to any VMs and PMs including AWS, Azure, GCP, physical machines, VirtualBox, vSphere, Vagrant pods (VMs), etc.
+
+With `geode-addon`, you can have a complete control over Geode/GemFire running on VMs from your local machine. `geode-addon` preserves the state of VM configurations and deployments on your laptop so that you can conveniently activate or deactivate the VM environment at any time. After you are done running VMs, you can tear them down and reinstate the very same environment later with a single command. This saves you time and reduces VM costs when you are working in a cloud environment, for example. 
+
+## Installation Steps
+
+There are four (4) main steps to installing `geode-addon` on VMs. Once these steps are performed, you can then synchronize your local machine with the remote VMs by simply executing the `vm_sync` command, which enables the local control of VMs.
+
+1. [Setup password-less SSH login](#Password-less-SSH-Login)
+2. [Download required software](#Download-Software)
+3. [Create VM workspace](#Create-VM-Workspace)
+4. [Synchronize VM Workspace](#Synchronize-VM-Workspace)
 
 ## Password-less SSH Login
 
-The first step is to check to make sure you are able to login to all VMs without the password. For AWS EC2, for example, this is already done for you so you can skip this section.
+The first step is to check to make sure you are able to login to the VMs that you want to cluster without the password. For AWS EC2, for example, this is already done for you so you can skip this section.
 
 If you need to manually setup password-less SSH login, then follow the [instructions here](password-less-ssh-login.md).
 
-## Install `geode-addon`
+## Download Software
 
-Untar the distribution on anywhere in the VM file system. For our example, we'll untar it in the `~/Geode` directory and also install Geode Enterprise and JDK in the same directory.
+`geode-addon` requires the following software. If they are not installed on VMs, then download their tarball or zip distributions.
+
+- JDK
+- Geode or GemFire
+
+For our demo, we'll assume they are downloaded in the following directory. Note that they must be tarball or zip distributions.
 
 ```console
-mkdir -p ~/Geode
-tar -C ~/Geode/ -xzf geode-addon_0.9.0-SNAPSHOT.tar.gz
-tar -C ~/Geode/ -xzf apache-geode-1.11.0.tgz
-tar -C ~/Geode -xzf jdk-8u212-linux-x64.tar.gz
+/home/dpark/Downloads
+├── jdk1.8.0_212.tar.gz
+└── apache-geode-1.11.0.tar.tgz
 ```
 
-If you have your private key file (`.pem`) for ssh login, then place it in the `~/Geode` directory.
+## Create VM Workspace
+
+Create a VM workspace on your local machine, e.g., your laptop.
 
 ```console
-# Example: place your AWS SSH private key file in ~/Geode
-ls -l ~/Geode
-total 12
--r--------  1 dpark dpark 1696 Aug 23 17:10 foo-pk.pem
-drwxrwxr-x 12 dpark dpark 4096 Aug 23 15:43 geode-addon_0.9.0-SNAPSHOT
-drwxr-xr-x 10 dpark dpark 4096 Jun 11 18:29 apache-geode-1.11.0
-drwxr-xr-x  9 dpark dpark 4096 Apr  2 00:49 jdk1.8.0_212
+create_workspace -vm -name ws-vm
 ```
 
-## Initialize `geode-addon`
-
-Execute the following interactive command and provide values for all prompts. Let's create the default workspace `ws-vm` and the default cluster 'vm-cluster` in the `~/Geode/workspaces` directory for our demo.
-
-:exclamation: Note the `-vm` option which enables the default cluster to run on VMs.
+The above command interactively prompts for software installation paths information. The `-vm` option enables VMs and `-name` option names the workspace. The following shows my laptop environment. The environment variables that begin with `VM_` are specific to the remote VMs. All other environment variables without the prefix `VM_` pertain to your laptop environment. For example, `VM_GEODE_ADDON_HOME` is the `geode-addon` installation path in the VM hosts you specified.
 
 ```console
-~/Geode/geode-addon_0.9.0-SNAPSHOT/bin_sh/init_geode_addon -path ~/Geode/workspaces -workspace ws-vm -cluster vm-cluster -vm
+Please answer the prompts that appear below. If you are not able to complete
+the prompts at this time then use the '-quiet' option to bypass the prompts.
+You can complete the requested values later in the generated 'setenv.sh' file
+You can abort this command at any time by entering 'Ctrl-C'.
+
+Enter Java home path.
+[/home/dpark/Work/linux/jdk1.8.0_212]:
+
+Enter Geode (IMDG) home directory path. Choose one
+from the defaults listed below or enter another.
+   /home/dpark/Work/linux/apache-geode-1.11.0
+[/home/dpark/Work/linux/apache-geode-1.11.0]:
+
+Enter workspace name.
+[ws-vm]:
+
+Enter default cluster name.
+[mygeode]:
+
+Enable VM? Enter 'true' or 'false' [true]:
+Enter VM JDK home path.
+[/home/dpark/Work/linux/jdk1.8.0_212]:
+/home/dpark/Geode/jdk1.8.0_212
+Enter VM Geode home path.
+[/home/dpark/Work/linux/apache-geode-1.11.0]:
+/home/dpark/Geode/apache-geode-1.11.0
+Enter VM geode-addon home path.
+[/c/Users/dpark/Work/git/geode-addon/tmp/geode-addon_0.9.0-SNAPSHOT]:
+/home/dpark/Geode/geode-addon_0.9.0-SNAPSHOT
+Enter VM workspaces path.
+[/home/dpark/Work/Geode/workspaces-wsl]:
+/home/dpark/Geode/workspaces
+Enter VM host names or IP addresses separated by comma.
+[]:
+ubuntu1,ubuntu2,ubuntu3
+Enter VM user name.
+[]: dpark
+Enter VM SSH private key path. If you don't have the key file (.pem) then
+leave it blank for now. You can place the file in the workspace directory or
+set the path in the workspace 'setenv.sh' file later.
+[]:
+
+
+You have entered the following.
+                        JAVA_HOME: /home/dpark/Work/linux/jdk1.8.0_212
+                       GEODE_HOME: /home/dpark/Work/linux/apache-geode-1.11.0
+            GEODE_ADDON_WORKSPACE: /home/dpark/Work/Geode/workspaces-wsl/ws-vm
+                  Default Cluster: mygeode
+                       VM_ENABLED: true
+                     VM_JAVA_HOME: /home/dpark/Geode/jdk1.8.0_212
+                    VM_GEODE_HOME: /home/dpark/Geode/apache-geode-1.11.0
+              VM_GEODE_ADDON_HOME: /home/dpark/Geode/geode-addon_0.9.0-SNAPSHOT
+   VM_GEODE_ADDON_WORKSPACES_HOME: /home/dpark/Geode/workspaces
+         VM_GEODE_ADDON_WORKSPACE: /home/dpark/Geode/workspaces/ws-vm
+                         VM_HOSTS: ubuntu1,ubuntu2,ubuntu3
+                          VM_USER: dpark
+              VM_PRIVATE_KEY_FILE:
+Enter 'c' to continue, 'r' to re-enter, 'q' to quit: c  
 ```
 
-## Source in `initenv.sh`
+The above example shows that the installation paths in the VMs are different from the local installation paths. We choose to install all the software components in the `/home/dpark/Geode` for the VMs.
 
-Source in the workspaces `initenv.sh` file which sets your workspaces-wide environment variables.
+If you specify the private key file, i.e., `ecs.pem` in our example, then it is automatically copied to to the newly created workspace directory. It is later deployed to the VMs when you execute the `vm_sync` command.
+
+You can also run the `create_workspace` in the non-interactive mode by specifying the `-quiet` option. The following command produces the same workspace configurations as the above interactive example.
 
 ```console
-. ~/Geode/workspaces/initenv.sh
-
-# Optionally add the above line in .bashrc so that geode-addon is
-# automatically initialized when you login next time.
-echo ". ~/Geode/workspaces/initenv.sh" >> ~/.bashrc
+create_workspace -quiet \
+-name ws-vm \
+-cluster mygeode \
+-java /home/dpark/Work/linux/jdk1.8.0_212 \
+-geode /home/dpark/Work/linux/apache-geode-1.11.0 \
+-vm ubuntu1,ubuntu2,ubuntu3 \
+-vm-java /home/dpark/Geode/jdk1.8.0_212 \
+-vm-geode /home/dpark/Geode/apache-geode-1.11.0 \
+-vm-addon /home/dpark/Geode/geode-addon_0.9.0-SNAPSHOT \
+-vm-workspaces /home/dpark/Geode/workspaces \
+-vm-user dpark
 ```
 
-### Environment Variable: `GEODE_ADDON_WORKSPACE`
+## SSH Private Key
 
-The environment variable `GEODE_ADDON_WORKSPACE` is set by sourcing in `initenv.sh`. We will use this variable in the subsequent sections.
-
-### `vm-cluster`
-
-The above `init_geode_addon` command executed in the [Initialize `geode-addon`](#initialize-geode-addon) section creates the `$GEODE_ADDON_WORKSPACE/clusters/vm-cluster` directory which contains sub-directories and files that are specific to the `vm-cluster` cluster. 
+If a private key file is required and you have not specified in the previous example, then you can place it in the workspace directory. `geode-addon` automatically picks up the first `.pem` file found in the workspace directory if the `VM_PRIVATE_KEY_FILE` environment variable is not set in the `setenv.sh` file. The following shows the contents of the `ws-vm` workspace directory we created.
 
 ```console
-vm-cluster
+# Example: place your AWS SSH private key file (foo.pem) in the ws-vm workspace.
+switch_workspace ws-vm
+tree -L 1 .
+.
+├── apps
+├── bundles
+├── clusters
+├── docker
+├── initenv.sh
+├── k8s
+├── lib
+├── plugins
+├── pods
+└── setenv.sh
+```
+
+## Test VM Workspace
+
+Before you sync the local workspace with VMs, which may initially take some time to complete if you need to install software, we should first test the environment to make sure SSH works properly. This is done by executing `vm_test`.
+
+```console
+vm_test
+```
+
+`vm_test` outputs the following:
+
+```console
+------------------------------------------------------------------------------------------
+Workspace: ws-vm
+
+Environment:
+                  VM_ENABLED=true
+                    VM_HOSTS=ubuntu1,ubuntu2,ubuntu3
+                     VM_USER=dpark
+         VM_PRIVATE_KEY_FILE=
+                VM_JAVA_HOME=/home/dpark/Geode/jdk1.8.0_212
+           VM_GEODE_HOME=/home/dpark/Geode/apache-geode-1.11.0
+     VM_GEODE_ADDON_HOME=/home/dpark/Geode/geode-addon_0.9.0-SNAPSHOT
+VM_GEODE_ADDON_WORKSPACE=/home/dpark/Geode/workspaces/ws-vm
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+Network Test:
+   ubuntu1 - OK
+   ubuntu2 - OK
+   ubuntu3 - OK
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+WARNING:
+/home/dpark/Geode/jdk1.8.0_212
+   Java is not installed on the following VMs. The workspace will not be operational
+   until you install Java on these VMs.
+       ubuntu1
+
+   To install Java on the above VMs, download the correct version of Java and execute 'vm_install'.    
+   Example:
+      vm_install -java jdk1.8.0_212.tar.gz
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+WARNING:
+/home/dpark/Geode/apache-geode-1.11.0
+   Geode is not installed on the following VMs. The workspace will not be operational
+   until you install Geode on these VMs.
+       ubuntu1 ubuntu2 ubuntu3
+
+   To install Geode on the above VMs, download the correct version of Geode and
+   execute 'vm_install'.
+
+   Example:
+      vm_install -geode apache-geode-1.11.0.tar.gz
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+Cluster: mygeode
+
+Cluster Properties File:
+   /c/Users/dpark/Work/Geode/workspaces-wsl/ws-vm/clusters/mygeode/etc/cluster.properties
+
+Environment:
+          vm.enabled=true
+            vm.hosts=ubuntu1,ubuntu2,ubuntu3
+             vm.user=dpark
+   vm.privateKeyFile=
+
+The cluster VM environment is identical to the workspace VM environment.
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+Summary:
+   One or more VM issues found. Please correct them before executing 'vm_sync'.
+
+Workspace Issues:
+   None.
+Network Issues:
+   None.
+Software Issues:
+   Java missing from the following VMs. Install Java with 'vm_install -java'.
+      ubuntu1
+   Geode missing from the following VMs. Install Geode with 'vm_install -geode'.
+      ubuntu1 ubuntu2 ubuntu3
+Cluster Issues:
+   None.
+------------------------------------------------------------------------------------------
+```
+
+`vm_test` scans all the VMs and reports any issues it encounters. For example, the above`vm_test` report shows that SSH sessions are working fine but Java is not installed on `ubuntu1` and Geode is not installed on all of the VMs. To install Java and Geode on the VMs, we execute the `vm_install` command as follows.
+
+```console
+vm_install -java /home/dpark/Downloads/jdk-8u212-linux-x64.tar.gz \
+           -geode /home/dpark/Downloads/apache-geode-1.11.0.tgz
+```
+
+`vm_install` outputs the following:
+
+```console
+jdk-8u212-linux-x64.tar.gz
+   Installing ubuntu1...
+   Java installation complete.
+
+apache-geode-1.11.0.tgz
+   Installing ubuntu1...
+   Installing ubuntu2...
+   Installing ubuntu3...
+   Geode installation complete.
+
+Run 'vm_test' to check installation and configuration status.
+```
+
+If you run `vm_test` after installing Java and Geode, you should see no issues in the VM workspace. You can now proceed to sync the VM workspace.
+
+## Synchronize VM Workspace
+
+In the previous section, we have locally created and tested a VM workspace. Before we can use it on the remote VMs, we need to synchronize it with the VMs. To do so, we execute the `vm_sync` command, which synchronizes the workspace you just created and automatically installs `geode-addon` on all the VMs if it is not already installed.
+
+```console
+vm_sync
+```
+
+`vm_sync` outputs the following:
+
+```console
+Workspace sync: ws-vm
+   Synchronizing ubuntu1...
+   Synchronizing ubuntu2...
+   Synchronizing ubuntu3...
+Workspace sync complete.
+```
+
+## Configure Geode Cluster
+
+In our example, we have created the default cluster named, `mygeode`. Let's switch into the `mygeode` cluster.
+
+```console
+switch_cluster mygeode
+```
+
+The cluster directory has the following files.
+
+```console
+mygeode/
+├── bin_sh
+│   └── setenv.sh
 ├── etc
-│   ├── cluster.properties
 │   ├── cache.xml
-│   ├── gemfire.properites
+│   ├── cluster.properties
+│   ├── gemfire.properties
+│   ├── hibernate.cfg-mysql.xml
+│   ├── hibernate.cfg-postgresql.xml
 │   ├── log4j2.properties
 │   └── prometheus.yml
 ├── lib
 ├── log
 ├── plugins
-├── run
-│   └── vm-cluster-ubuntu1-01
-└── setenv.sh
+└── run
 ```
 
-### `vm-cluster/etc/cluster.properties`
+### `etc/cluster.properties`
 
-In the `vm-cluster` directory, you will find `etc/cluster.properties` which defines cluster-level properties. Let's edit this file to configure password-less `ssh` login and include **additional VMs** that can be part of the `vm-cluster` cluster.
+In the `mygeode` directory, you will find `etc/cluster.properties` which defines cluster-level properties. In this file, by default, the `vm.locator.hosts` property is set to the first VM host you listed for the workspace and the `vm.hosts` property is set to the entire host list. Let's make some changes to see how the cluster gets affected. Edit this file and change the `vm.localtor.hosts` to `ubuntu3` and change the `vm.hosts` property to `ubuntu1,ubuntu2`.
 
 ```console
 # Browse the cluster properties and change them as needed. 
-# Pay attention to the following property:
+# Pay attention to the following two (2) properties:
+#   vm.locator.hosts=
 #   vm.privateKeyFile=
-switch_cluster vm-cluster
+#   vm.hosts=
 vi etc/cluster.properties
 
-# Set the private key file path. This property must be commented out
-# if a private key file is not required.
-vm.privateKeyFile=~/Geode/foo-pk.pem
+# A comma separated list of host names or addresses. IMPORANT: No spaces allowed.
+vm.locator.hosts=ubuntu1
 
-# Include locator VM host names. Host names (or IP addresses) must be
-# comma separated with no spaces. Spaces are not supported.
-vm.locator.hosts=ubuntu4,ubuntu5
-
-# Include additional member VM host names. Host names (or IP addresses) must be
-# comma separated with no spaces. Spaces are not supported.
-vm.hosts=ubuntu1,ubuntu2,ubuntu3
-
-# If VMs are multi-homed then you may need to set bind-address and hostname-for-clients
-# for each VM. The property name format is 'vm.<host>.bindAddress' and vm.<host>.hostnameForClients.
-vm.ubuntu1.bindAddress=ubuntu1
-vm.ubuntu1.hostnameForClients=ubuntu1
-vm.ubuntu2.bindAddress=ubuntu2
-vm.ubuntu2.hostnameForClients=ubuntu2
-vm.ubuntu3.bindAddress=ubuntu3
-vm.ubuntu3.hostnameForClients=ubuntu3
-vm.ubuntu4.bindAddress=ubuntu4
-vm.ubuntu4.hostnameForClients=ubuntu4
-vm.ubuntu5.bindAddress=ubuntu5
-vm.ubuntu5.hostnameForClients=ubuntu5
-```
-
-### `vm-cluster/etc/cache.xml`
-
-You can also update the `cache.xml` configuration file at this time as needed.
-
-```console
-# Update cache.xml as needed.
-vi $GEODE_ADDON_WORKSPACE/clusters/vm-cluster/etc/cache.xml
-```
-
-## Deploy `geode-addon`
-
-You can repeat the above steps for all other VMs. That could be a lot of work. No worries. `geode-addon` is equipped with several utility commands that can help you with such repetitive tasks. For our demo, we'll create a tarball of the entire `~/Geode` directory and deploy it to all the VMs with a couple of commands.
-
-```console
-# Change directory to the your home directory.
-cd
-
-# Create a tarball of the entire Geode directory
-tar czf Geode.tar.gz Geode/
-
-# Copy the tarball to all VMs listed in the 'cluster.properties' file
-vm_copy Geode.tar.gz
-
-# Untar the tarball in all other VMs
-vm_exec tar -C ~/ -xzf ~/Geode.tar.gz
-
-# Update .bashrc in all other VMs (Optional)
-vm_exec "echo \". ~/Geode/workspaces/initenv.sh\" >> ~/.bashrc"
-```
-
-You now have JDK, Geode, `geode-addon`, and the `ws-vm` workspace installed on all the hosts set by the `vm.locastor.hosts` and `vm.hosts` properties in the `etc/cluster.properties` file.
-
-## Add Locators and Members
-
-You now need to add locators by executing `add_locator -all`, which adds one locator to each locator VM. Similarly, the `add_member -all` adds one member to each member VM. 
-
-:exclamation: For VM clusters, `add_member` adds a member to a VM only if the VM does not have a member already added. Remember, `geode-addon` supports only one member per VM per cluster. On the other hand, for non-VM clusters, `add_member` indiscriminately adds a new member regardless of the member count.
-
-```console
-# Add a locator to each locator VM
-add_locator -all
-
-# Add a member to each member VM
-add_member -all
-```
-
-## Deploy Changes
-
-Any changes you made can be easily deployed to all the VMs specified in the `cluster.properties` file by  running the `vm_copy` command. The `vm_copy` command copies the specified file or directory to the same path in all the locator and member VMs. For example, if you made any changes in the `vm-cluster` directory, you can deploy the entire directory by executing the following:
-
-```console
-# Copy by absolute path
-vm_copy $GEODE_ADDON_WORKSPACE/clusters/vm-cluster
-
-# Or change directory to vm-cluster and copy from there
-cd_cluster
-vm_copy .
-```
-
-## About `vm_copy`
-
-The`vm_copy` command is a powerful command for applying your changes to all of the locator and member VMs. It is likely that you will often be reconfiguring Geode clusters or updating application library files. As with all other `geode-adddon` commands, by default, `vm_copy` is bound to the cluster settings in the `etc/cluster.properties` file. If you need to apply changes to the VMs other than the ones specified in the `cluster.properties` file, then you can use the `-vm` option to list the VMs to which the changes are to be applied. For example, if you need to include additional VMs to the cluster, you can install the tarball you created earlier using the `-vm` option as follows:
-
-```console
-# Copy the tarbarll to 2 additional VMs.
-vm_copy -vm ubuntu4,ubuntu5 Geode.tar.gz
-
-# Untar it on the 2 VMs.
-vm_exec -vm ubuntu4,ubuntu5 tar -C ~/ -xzf ~/Geode.tar.gz
-```
-
-Continuing with the example, to include the new VMs in the cluster, you would update the `etc/cluster.properties` file and once again use the `vm_copy` command to apply the changes to all the VMs including the ones you just added.
-
-```console
-vi $GEODE_ADDON_WORKSPACE/clusters/vm-cluster/etc/cluster.properties
-
-# Include additional locator host names. Host names (or IP addresses) must be
-# comma separated with no spaces. Spaces are not supported.
-vm.locator.hosts=ubunt1,ubuntu2
+# Set the private key file path. If this property is set then it overwrites the
+# VM_PRIVATE_KEY_FILE  environment variable set in the workspace's setenv.sh file. 
+#vm.privateKeyFile=~/Geode/Workspaces/ecs.pem
 
 # Include additional VM host names. Host names (or IP addresses) must be
 # comma separated with no spaces. Spaces are not supported.
-vm.hosts=ubuntu1,ubuntu2,ubuntu3,ubuntu4,ubuntu5
-
-# Apply changes to all the VMs except for this VM.
-vm_copy $GEODE_ADDON_WORKSPACE/clusters/vm-cluster/etc/cluster.properties
+vm.hosts=ubuntu1,ubuntu2
 ```
+
+### `etc/cache.xml`
+
+You can also update the `cache.xml` file at this time as needed.
+
+```console
+vi etc/cache.xml
+```
+
+## Sync Changes
+
+Any changes you made can be easily deployed to all the VMs specified by the `VM_HOSTS` environment variable by running the `vm_sync` command, which copies the entire workspace directory to the VMs. Be aware that this can take some time to complete if you have many VMs and large binary files in the workspace.
+
+After the VMs have been synchronized, if you make changes to only a few files, then instead of executing `vm_sync` again, you can execute `vm_copy` which copies only the specified file or directory to the VMs.
+
+```console
+switch_cluster mygeode
+
+# To copy a single file
+vm_copy etc/cluster.proerties
+
+# To copy the entire directory
+vm_copy .
+```
+
+### `vm_sync` vs `vm_copy`
+
+The main difference between `vm_sync` and `vm_copy` is that `vm_sync` copies the entire workspace and `vm_copy` copies only the specified file or directory. Both commands allow you to apply the changes you made to all of the VMs. As you might have guessed, `vm_sync` will take longer to complete since it copies the entire workspace, but it is more convenient to use than `vm_copy` since you don't have to remember the files you modified. These commands will quickly become your favorite commands as it is likely that you will often be reconfiguring Geode clusters or updating application library files.
+
+:exclamation: Note that `vm_copy` by default only copies the files that are in the workspace directory hierarchy. If you try to copy a file that is outside of the workspace directory then it will fail and output an error message. If you need to copy non-workspace files, specify the `-mirror` option, which copies the absolute file path to the same absolute file path in the remote VMs.
 
 ## Start Cluster
 
-You are now ready to start the `vm-cluster` cluster.
+You are now ready to start the `mygeode` cluster.
 
 ```console
 start_cluster
@@ -228,22 +383,35 @@ show_log
 
 # ubuntu2
 show_log -num 2
-
-# ubuntu3
-show_log -num 3
 ```
 
-## Shutdown/Stop/Kill Cluster
+## Stop/Kill Cluster
 
 ```console
-# Gracefuly shutdown cluster including locators. This may take a while.
-shutdown_cluster -all
+stop_cluster
+kill_cluster
+```
 
-# Stop cluster including locators. Stops each locator/member one at a time.
-stop_cluster -all
+## Running from VMs
 
-# Kill cluster including locators. kill -9 on all locators and members.
-kill_cluster -all
+You can also run VM workspaces from any of the VMs. As with the local environment, you must first setup the `geode-addon` environment on the VM in which you want to run workspaces by sourcing in the workspaces `initenv.sh` file.
+
+```console
+# SSH into one of the VMs
+ssh ubuntu1
+
+# Source in intienv.sh
+. ~/Geode/workspaces/initenv.sh
+
+# Optionally add the above line in .bashrc so that geode-addon is
+# automatically initialized when you login next time.
+echo ". ~/Geode/workspaces/initenv.sh" >> ~/.bashrc
+
+# Once you have initenv.sh souced in you can then execute any of the `geode-addon`
+# commands as before. The following starts the `mygeode` cluster.
+switch_workspace ws-vm
+swtich_cluster mygeode
+start_cluster
 ```
 
 ## Tear Down
@@ -251,17 +419,18 @@ kill_cluster -all
 If you want to remove the cluster from all the VMs, then you must first stop the cluster and execute the `remove_cluster` command. The workspace can be removed using the `vm_exec -all` command. 
 
 ```console
-# Stop cluster
-stop_cluster -all
+# Stop cluster and management center
+stop_cluster
+stop_mc
 
 # Remove cluster. Unlike other commands, this command requires the '-cluster' option.
-remove_cluster -cluster vm-cluster
+remove_cluster -cluster mygeode
 
-# Remove workspace from all VMs. The '-all' option includes the VM where you 
+# Remove workspace from all VMs. The '-all' option includes the VM in which you 
 # are executing this command. Note that we specify the host names 
-# since we have removed the vm-cluster. 
-vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3,ubuntu4,ubuntu5 rm -rf $GEODE_ADDON_WORKSPACE
+# since we have removed the mygeode cluster 
+vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3 rm -rf $VM_GEODE_ADDON_WORKSPACE
 
 # Of course, we can also remove the entire workspaces directory.
-vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3,ubuntu4,ubuntu5 rm -rf ~/Geode/workspaces
+vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3 rm -rf $VM_GEODE_ADDON_WORKSPACES_HOME
 ```
