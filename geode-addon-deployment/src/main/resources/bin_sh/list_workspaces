@@ -99,17 +99,24 @@ WORKSPACES=( $WORKSPACES )
 let WORKSPACES_LAST_INDEX=${#WORKSPACES[@]}-1
 for ((j = 0; j < ${#WORKSPACES[@]}; j++)); do
    WORKSPACE=${WORKSPACES[$j]}
-   GEODE_VERSION=$(grep "GEODE_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
-   GEODE_VERSION=$(echo "$GEODE_VERSION" | sed -e 's/^.*pivotal-gemfire-//' -e 's/"//')
-   if [ "$GEODE_VERSION" == "" ]; then
+   GEODE_VERSION=$(grep "^export GEODE_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
+   if [[ "$GEODE_VERSION" == *"gemfire"* ]]; then
+      GEODE_VERSION=$(echo "$GEODE_VERSION" | sed -e 's/^.*pivotal-gemfire-//' -e 's/"//')
+      CLUSTER_TYPE="gemfire"
+   else
       GEODE_VERSION=$(echo "$GEODE_VERSION" | sed -e 's/^.*apache-geode-//' -e 's/"//')
       CLUSTER_TYPE="geode"
-   else
-      CLUSTER_TYPE="gemfire"
    fi
-
-   GEODE_ADDON_VERSION=$(grep "GEODE_ADDON_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
+   VM_ENABLED=$(grep "VM_ENABLED=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
+   VM_ENABLED=$(echo "$VM_ENABLED" | sed -e 's/^.*VM_ENABLED=//' -e 's/"//g')
+   if [ "$VM_ENABLED" == "true" ]; then
+   VM_WORKSPACE="vm, "
+   else
+   VM_WORKSPACE=""
+   fi
+   GEODE_ADDON_VERSION=$(grep "^export GEODE_ADDON_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE/setenv.sh)
    GEODE_ADDON_VERSION=$(echo "$GEODE_ADDON_VERSION" | sed -e 's/^.*geode-addon_//' -e 's/"//')
+   
    if [ $j -lt $WORKSPACES_LAST_INDEX ]; then
       echo "├── $WORKSPACE (${CLUSTER_TYPE}_${GEODE_VERSION}, geode-addon_$GEODE_ADDON_VERSION)"
       LEADING_BAR="│"

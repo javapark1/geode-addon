@@ -361,7 +361,7 @@ echo ". \$SCRIPT_DIR/.addonenv.sh \$*" >> $WORKSPACES_HOME/setenv.sh
 echo "" >> $WORKSPACES_HOME/setenv.sh
 echo "#" >> $WORKSPACES_HOME/setenv.sh
 echo "# There are multiple setenv.sh files sourced in in the order shown below," >> $WORKSPACES_HOME/setenv.sh
-echo "# each overriding varirables set in the previous one(s)." >> $WORKSPACES_HOME/setenv.sh
+echo "# each overriding the varirables set in the previous one(s)." >> $WORKSPACES_HOME/setenv.sh
 echo "#" >> $WORKSPACES_HOME/setenv.sh
 echo "#    $GEODE_ADDON_HOME/bin_sh/setenv.sh" >> $WORKSPACES_HOME/setenv.sh
 echo "#    setenv.sh (this file)" >> $WORKSPACES_HOME/setenv.sh

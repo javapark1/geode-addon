@@ -48,19 +48,18 @@ OPTIONS
              Pod name. The 'local' pod is the local machine.
              Default: local
 
-   -vm
-             If '-vm' is specified without hosts then it still
-             registers the cluster as a VM cluster and creates
-             a single member on this host.
-
    -vm comma_separated_hosts
              A list of VM hosts or addresses separated by comma.
-             Spaces are NOT allowed.
+             Spaces are NOT allowed. If this option is not specified, then the
+             host list defined by VM_HOSTS in the workspace 'setenv.sh' file 
+             is applied.
 
-   -locator comma_separated_locators
+   -locator comma_separated_locator_hosts
              A list of locator hosts or addresses separated by comma.
              Spaces are NOT allowed. This option is meaningful only
-             if the '-vm' option is specified.
+             if the '-vm' option is specified. If this option is not
+             specified but the '-vm' option is specified, then the first
+             host from the '-vm' host list is selected for the locator.
 
    -port first_locator_port_number
              First locator's port number. Port number is incremented
@@ -345,14 +344,21 @@ function writeCluster()
 # 
 # VM cluster
 #
-VM_ENABLED=$VM_SPECIFIED
 DEFAULT_USER=$(whoami)
 VM_USER=$DEFAULT_USER
 VM_KEY_FILE="/your/private/keyfile.pem"
 if [ "$VM_ENABLED" == "true" ]; then
-   VM_LOCATOR_HOSTS=$LOCATOR
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   fi
+   if [ "$LOCATOR" == "" ]; then
+      # Extract the first host from the VM host list
+      VM_LOCATOR_HOSTS=${VM_HOSTS%%,*}
+   else
+      VM_LOCATOR_HOSTS=$LOCATOR
+   fi
    if [ "$VM_LOCATOR_HOSTS" == "" ]; then
-      echo "WARNING: VM locator hosts undefined. Configuring with this host."
+      echo "WARNING: VM locator host\(s\) undefined. Configuring with this host."
       VM_LOCATOR_HOSTS=`hostname`
    fi
    if [ "$VM_HOSTS" == "" ]; then
@@ -473,31 +479,8 @@ else
    fi
 fi
 
+# Write cluster files
 writeCluster
-
-# Create the cluster on all VMs by copying the cluster dir and adding members.
-if [ "$VM_ENABLED" == "true" ]; then
-   for i in "$VM_LOCATOR_HOSTS"; do
-      found=false
-      for j in "$VM_HOSTS"; do
-         if [ "$i" == "$j" ]; then
-            found=true
-         fi
-      done
-      if [ "$found" == "false" ]; then
-         __VM_HOSTS="$__VM_HOSTS $i"	      
-      fi
-   done      
-   __VM_HOSTS="$__VM_HOSTS $VM_HOSTS"
-   # Copy the cluster dir to all other VMs
-   $BASE_DIR/bin_sh/vm_copy -vm $__VM_HOSTS $CLUSTER_DIR 
-
-   # Add a locator to all locator VMs
-   $BASE_DIR/bin_sh/add_locator -cluster $CLUSTER -all
-
-   # Add a member to all VMs
-   $BASE_DIR/bin_sh/add_member -cluster $CLUSTER -all
-fi
 
 # Display cluster information
 echo "----------------------------------------------------------------"
@@ -563,9 +546,12 @@ if [ "$VM_ENABLED" == "true" ]; then
    echo "4. You must configure password-less ssh login to all VMs. On AWS, this"
    echo "   is already configured but you will need to enter the correct private key"
    echo "   file path in the cluster.properties file."
-   echo "5. To add VMs, list the VM host names in the cluster.properties file."
+   echo "5. To change VM host names, list the VM host names in the cluster.properties file"
+   echo "   for locators and members."
+   echo "      vm.locator.hosts=host1,host2,..."
    echo "      vm.hosts=host1,host2,..."
-   echo "6. Deploy the cluster configuration changes you made to all the VMs listed in the step above."
+   echo "6. Deploy the cluster configuration changes you made to all the VM hosts listed in the"
+   echo "   previous step by running 'vm_copy' or 'vm_sync'."
    echo "      vm_copy $CLUSTER_DIR"
    echo "7. To start the cluster:"
    echo "      start_cluster -cluster $CLUSTER"

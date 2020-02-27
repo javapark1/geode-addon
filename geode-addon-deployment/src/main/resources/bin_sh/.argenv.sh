@@ -41,8 +41,15 @@ FG_SPECIFIED=false
 MEMBER_NUM=1
 MEMBER_NUM_SPECIFIED=false
 REMOTE_SPECIFIED=false
+MIRROR_SPECIFIED=false
 VM_SPECIFIED=false
 VM_HOSTS=
+VM_JAVA_HOME_ARG=
+VM_GEODE_HOME_ARG=
+VM_GEODE_ADDON_HOME_ARG=
+VM_GEODE_ADDON_WORKSPACES_HOME_ARG=
+VM_USER_ARG=
+VM_PRIVATE_KEY_FILE_ARG=
 KEY=
 APP=
 APP_SPECIFIED=false
@@ -151,9 +158,20 @@ do
    elif [ "$PREV" == "-id" ]; then
       ID=$i
    elif [ "$PREV" == "-vm" ]; then
-      VM_HOSTS=$i
-   elif [ "$PREV" == "-remote" ]; then
-      REMOTE=$i
+      VM_HOSTS_ARG=$i
+   elif [ "$PREV" == "-vm-java" ]; then
+      VM_JAVA_HOME_ARG=$i
+   elif [ "$PREV" == "-vm-geode" ]; then
+      VM_GEODE_HOME_ARG=$i
+      VM_JET_HOME_ARG=$i
+   elif [ "$PREV" == "-vm-addon" ]; then
+      VM_GEODE_ADDON_HOME_ARG=$i
+   elif [ "$PREV" == "-vm-workspaces" ]; then
+      VM_GEODE_ADDON_WORKSPACES_HOME_ARG=$i
+   elif [ "$PREV" == "-vm-user" ]; then
+      VM_USER_ARG=$i
+   elif [ "$PREV" == "-vm-key" ]; then
+      VM_PRIVATE_KEY_FILE_ARG=$i
    elif [ "$PREV" == "-key" ]; then
       KEY=$i
    elif [ "$PREV" == "-app" ]; then
@@ -233,6 +251,8 @@ do
       LONG=true
    elif [ "$i" == "-vm" ]; then
       VM_SPECIFIED=true
+   elif [ "$i" == "-mirror" ]; then
+      MIRROR_SPECIFIED=true
    elif [ "$i" == "-remote" ]; then
       REMOTE_SPECIFIED=true
    elif [ "$i" == "-tree" ]; then

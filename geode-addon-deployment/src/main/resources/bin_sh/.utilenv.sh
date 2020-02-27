@@ -317,21 +317,71 @@ function getClusters
 # @required PODS_DIR
 #
 function getPods {
-   pushd $PODS_DIR > /dev/null 2>&1
-   __PODS=""
-   __COUNT=0
-   for i in *; do
-      if [ "$i" != "local" ] && [ -d "$i" ]; then
-         let __COUNT=__COUNT+1
-         if [ $__COUNT -eq 1 ]; then
-            __PODS="$i"
-         else
-            __PODS="$__PODS $i"
+   local __PODS=""
+   if [ -d "$K8S_DIR" ]; then
+      pushd $PODS_DIR > /dev/null 2>&1
+      __COUNT=0
+      for i in *; do
+         if [ "$i" != "local" ] && [ -d "$i" ]; then
+            let __COUNT=__COUNT+1
+            if [ $__COUNT -eq 1 ]; then
+               __PODS="$i"
+            else
+               __PODS="$__PODS $i"
+            fi
          fi
-      fi
-   done
-   popd > /dev/null 2>&1
+      done
+      popd > /dev/null 2>&1
+   fi
    echo $__PODS
+}
+
+# 
+# Returns a complete list of k8s components found in K8S_DIR
+# @required K8S_DIR
+#
+function getK8s {
+   local __K8S=""
+   if [ -d "$K8S_DIR" ]; then
+      pushd $K8S_DIR > /dev/null 2>&1
+      __COUNT=0
+      for i in *; do
+         if [ -d "$i" ]; then
+            let __COUNT=__COUNT+1
+            if [ $__COUNT -eq 1 ]; then
+               __K8S="$i"
+            else
+               __K8S="$__K8S $i"
+            fi
+         fi
+      done
+      popd > /dev/null 2>&1
+   fi
+   echo $__K8S
+}
+
+# 
+# Returns a complete list of Docker components found in DOCKER_DIR
+# @required DOCKER_DIR
+#
+function getDockers {
+   local __DOCKERS=""
+   if [ -d "$DOCKER_DIR" ]; then
+      pushd $DOCKER_DIR > /dev/null 2>&1
+      __COUNT=0
+      for i in *; do
+         if [ -d "$i" ]; then
+            let __COUNT=__COUNT+1
+            if [ $__COUNT -eq 1 ]; then
+               __DOCKERS"$i"
+            else
+               __DOCKERS="$__DOCKERS $i"
+            fi
+         fi
+      done
+      popd > /dev/null 2>&1
+   fi
+   echo $__DOCKERS
 }
 
 # 
@@ -339,26 +389,30 @@ function getPods {
 # @required APPS_DIR
 #
 function getApps {
-   pushd $APPS_DIR > /dev/null 2>&1
    __APPS=""
-   __COUNT=0
-   for i in *; do
-      if [ -d "$i" ]; then
-         let __COUNT=__COUNT+1
-         if [ $__COUNT -eq 1 ]; then
-            __APPS="$i"
-         else
-            __APPS="$__APPS $i"
+   if [ -d "$APPS_DIR" ]; then
+      pushd $APPS_DIR > /dev/null 2>&1
+      __COUNT=0
+      for i in *; do
+         if [ -d "$i" ]; then
+            let __COUNT=__COUNT+1
+            if [ $__COUNT -eq 1 ]; then
+               __APPS="$i"
+            else
+               __APPS="$__APPS $i"
+            fi
          fi
-      fi
-   done
-   popd > /dev/null 2>&1
+      done
+      popd > /dev/null 2>&1
+   fi
    echo $__APPS
 }
 
 # 
 # Returns a complete list of apps found in GEODE_ADDON_HOME/apps
 # @required GEODE_ADDON_HOME
+# @param clusterType  "imdg" to return IMDG apps, "jet" to return Jet apps.
+#                     If not specified or an invalid value then returns all apps.
 #
 function getAddonApps {
    pushd $GEODE_ADDON_HOME/apps > /dev/null 2>&1
@@ -574,7 +628,7 @@ function getVmLocatorPid
    local __HOST=$1
    local __MEMBER=$2
    local __WORKSPACE=$3
-   local locators=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+   local locators=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    spids=""
    for j in $locators; do
       spids="$j $spids"
@@ -598,27 +652,9 @@ function getVmMemberPid
    __HOST=$1
    __MEMBER=$2
    __WORKSPACE=$3
-   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    spids=""
    for j in $members; do
-      spids="$j $spids"
-   done
-   spids=`trimString $spids`
-   echo $spids
-}
-
-#
-# Returns the management center PID if it is running.
-# @param mcName         Unique management center name
-# @param workspaceName  Workspace name
-#
-function getMcPid
-{
-   __MC=$1
-   __WORKSPACE=$2
-   mcs=`jps -v | grep "geode.mc.name=$__MC" | grep "geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
-   spids=""
-   for j in $mcs; do
       spids="$j $spids"
    done
    spids=`trimString $spids`
@@ -1123,6 +1159,10 @@ function switch_workspace
    if [ "$1" == "" ]; then
       . $GEODE_ADDON_WORKSPACE/initenv.sh -quiet
    else
+      if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME/$1" ]; then
+         echo >&2 "ERROR: Invalid workspace. Workspace does not exist. Command aborted."
+	 return 1
+      fi
       if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME/$1/clusters/$CLUSTER" ]; then
          export CLUSTER=""
       fi

@@ -163,7 +163,7 @@ function displayVmClusterLong()
       fi
       if [ "$JMX_ENABLED" == "true" ]; then
          JMX_PORT=$JMX_START_PORT
-         JMX_URL="service:jmx:rmi:///jndi/rmi://${ LOCATOR_HOSTNAME_FOR_CLIENTS}:$JMX_PORT/jmxrmi"
+         JMX_URL="service:jmx:rmi:///jndi/rmi://${LOCATOR_HOSTNAME_FOR_CLIENTS}:$JMX_PORT/jmxrmi"
       fi
       if [ "$PROMETHEUS_ENABLED" == "true" ]; then
          PROMETHEUS_PORT=$PROMETHEUS_START_PORT
@@ -185,11 +185,11 @@ function displayVmClusterLong()
       pid=`getVmLocatorPid $VM_HOST $LOCATOR $WORKSPACE`
       if [ -z $pid ]; then
          let DOWN_LOCATOR_COUNT=DOWN_LOCATOR_COUNT+1
-         echo "           STATE: Down"
+         echo -e "          STATE: ${CLightRed}Down${CNone}"
          echo "             PID: N/A"
       else
          let RUNNING_LOCATOR_COUNT=RUNNING_LOCATOR_COUNT+1
-         echo "           STATE: Running"
+         echo -e "          STATE: ${CLightGreen}Running${CNone}"
          echo "             PID: $pid"
       fi
 
@@ -242,11 +242,11 @@ function displayVmClusterLong()
       pid=`getVmMemberPid $VM_HOST $MEMBER $WORKSPACE`
       if [ -z $pid ]; then
          let DOWN_MEMBER_COUNT=DOWN_MEMBER_COUNT+1
-         echo "           STATE: Down"
+         echo -e "          STATE: ${CLightRed}Down${CNone}"
          echo "             PID: N/A"
       else
          let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
-         echo "           STATE: Running"
+         echo -e "          STATE: ${CLightGreen}Running${CNone}"
          echo "             PID: $pid"
       fi
 
@@ -501,11 +501,11 @@ function displayClusterLong()
             pid=`getLocatorPid $LOCATOR $WORKSPACE`
             if [ -z $pid ]; then
                let DOWN_LOCATOR_COUNT=DOWN_LOCATOR_COUNT+1
-               echo "           STATE: Down"
+               echo -e "          STATE: ${CLightRed}Down${CNone}"
                echo "             PID: N/A"
             else
                let RUNNING_LOCATOR_COUNT=RUNNING_LOCATOR_COUNT+1
-               echo "           STATE: Running"
+               echo -e "          STATE: ${CLightGreen}Running${CNone}"
                echo "             PID: $pid"
             fi
          else
@@ -602,11 +602,11 @@ function displayClusterLong()
             pid=`getMemberPid $MEMBER $WORKSPACE`
             if [ -z $pid ]; then
                let DOWN_MEMBER_COUNT=DOWN_MEMBER_COUNT+1
-               echo "           STATE: Down"
+               echo -e "          STATE: ${CLightRed}Down${CNone}"
                echo "             PID: N/A"
             else
                let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
-               echo "           STATE: Running"
+               echo -e "          STATE: ${CLightGreen}Running${CNone}"
                echo "             PID: $pid"
             fi
          else
