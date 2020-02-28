@@ -420,17 +420,15 @@ If you want to remove the cluster from all the VMs, then you must first stop the
 
 ```console
 # Stop cluster and management center
-stop_cluster
-stop_mc
+stop_cluster -all
 
 # Remove cluster. Unlike other commands, this command requires the '-cluster' option.
 remove_cluster -cluster mygeode
 
-# Remove workspace from all VMs. The '-all' option includes the VM in which you 
-# are executing this command. Note that we specify the host names 
-# since we have removed the mygeode cluster 
-vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3 rm -rf $VM_GEODE_ADDON_WORKSPACE
+# Simulate removing workspace from all VMs. Displays removal steps but does not
+# actually remove the workspace.
+remove_workspace -workspace ws-vm -simulate
 
-# Of course, we can also remove the entire workspaces directory.
-vm_exec -all -vm ubuntu1,ubuntu2,ubuntu3 rm -rf $VM_GEODE_ADDON_WORKSPACES_HOME
+# Remove workspace from all VMs. Runs in interactive mode.
+remove_workspace -workspace ws-vm
 ```
