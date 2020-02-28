@@ -221,8 +221,8 @@ if [ "$VM_ENABLED" == "true" ]; then
       VM_KEY="-i $VM_KEY"
    fi
 
-   # Locators and members
-   VM_HOSTS=$(getAllMergedVmHosts)
+   # Remove all from the workspace VMs
+
    # Replace , with space
    __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
    for VM_HOST in $__VM_HOSTS; do
@@ -233,7 +233,7 @@ if [ "$VM_ENABLED" == "true" ]; then
       elif [ "$HOSTNAME" == "$THIS_VM_HOSTNAME" ]; then
          continue
       fi
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $CLUSTER_DIR"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $VM_GEODE_ADDON_WORKSPACE/clusters/$CLUSTER"
    done
 fi
 

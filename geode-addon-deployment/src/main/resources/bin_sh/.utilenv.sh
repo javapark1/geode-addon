@@ -281,34 +281,79 @@ function getWorkspaces
    echo $__WORKSPACES
 }
 
+#
+# Returns a comman separated list of VM hosts of the specified workspace. Returns an empty
+# string if the workspace does not exist.
+# @param    workspaceName    Workspace name
+#
+function getVmWorkspaceHosts
+{
+   local __WORKSPACE=$1
+   local __VM_HOSTS=""
+   if [ "$__WORKSPACE" != "" ]; then
+      local __VM_HOSTS=$(grep "^VM_HOSTS=" $GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/setenv.sh)
+      __VM_HOSTS=${__VM_HOSTS##"VM_HOSTS="}
+      __VM_HOSTS=$(trimDoubleQuotes $__VM_HOSTS)
+   fi
+   echo $__VM_HOSTS
+}
+
+#
+# Returns a comman separated list of VM hosts of the specified workspace. Returns an empty
+# string if the workspace does not exist.
+# @param    workspaceName    Workspace name
+#
+function getVmWorkspacesHome
+{
+   local __WORKSPACE=$1
+   local __VM_WORKSPACES_HOME=""
+   if [ "$__WORKSPACE" != "" ]; then
+      local __VM_WORKSPACES_HOME=$(grep "^VM_GEODE_ADDON_WORKSPACES_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/setenv.sh)
+      __VM_WORKSPACES_HOME=${__VM_WORKSPACES_HOME##"VM_GEODE_ADDON_WORKSPACES_HOME="}
+      __VM_WORKSPACES_HOME=$(trimDoubleQuotes $__VM_WORKSPACES_HOME)
+   fi
+   echo $__VM_WORKSPACES_HOME
+}
+
 # 
 # Returns a complete list of clusters found in the speciefied cluster environment.
 # @required GEODE_ADDON_WORKSPACE  Workspace directory path.
 # @param clusterEnv   Optional cluster environment. 
 #                     Valid values: "clusters", "pods", "k8s", "docker", and "apps".
 #                     If unspecified then defaults to "clusters".
+# @param workspace    Optional workspace name. If unspecified, then defaults to
+#                     the current workspace.
 #
 function getClusters
 {
    local __ENV="$1"
+   local __WORKSPACE="$2"
    if [ "$__ENV" == "" ]; then
       __ENV="clusters"
    fi
-   local __CLUSTERS_DIR="$GEODE_ADDON_WORKSPACE/$__ENV"
-   pushd $__CLUSTERS_DIR > /dev/null 2>&1
+   local __WORKSPACE_DIR
+   if [ "$__WORKSPACE" == "" ]; then
+      __WORKSPACE_DIR=$GEODE_ADDON_WORKSPACE
+   else
+      __WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE
+   fi
+   local __CLUSTERS_DIR="$__WORKSPACE_DIR/$__ENV"
    __CLUSTERS=""
-   __COUNT=0
-   for i in *; do
-      if [ "$i" != "local" ] && [ -d "$i" ]; then
-         let __COUNT=__COUNT+1
-         if [ $__COUNT -eq 1 ]; then
-            __CLUSTERS="$i"
-         else
-            __CLUSTERS="$__CLUSTERS $i"
+   if [ -d "$__CLUSTERS_DIR" ]; then
+      pushd $__CLUSTERS_DIR > /dev/null 2>&1
+      __COUNT=0
+      for i in *; do
+         if [ "$i" != "local" ] && [ -d "$i" ]; then
+            let __COUNT=__COUNT+1
+            if [ $__COUNT -eq 1 ]; then
+               __CLUSTERS="$i"
+            else
+               __CLUSTERS="$__CLUSTERS $i"
+            fi
          fi
-      fi
-   done
-   popd > /dev/null 2>&1
+      done
+      popd > /dev/null 2>&1
+   fi
    echo $__CLUSTERS
 }
 
@@ -318,7 +363,7 @@ function getClusters
 #
 function getPods {
    local __PODS=""
-   if [ -d "$K8S_DIR" ]; then
+   if [ -d "$PODS_DIR" ]; then
       pushd $PODS_DIR > /dev/null 2>&1
       __COUNT=0
       for i in *; do
@@ -662,6 +707,162 @@ function getVmMemberPid
 }
 
 #
+# Returns the number of active (or running) locators in the specified cluster.
+# Returns 0 if the workspace name or cluster name is unspecified or invalid.
+# This function works for both VM and non-VM workspaces.
+# @param workspaceName Workspace name.
+# @param clusterName   Cluster name.
+#
+function getActiveLocatorCount
+{
+   # Locators
+   local __WORKSPACE=$1
+   local __CLUSTER=$2
+   if [ "$__WORKSPACE" == "" ] || [ "$__CLUSTER" == "" ]; then
+      echo 0
+   fi
+   local LOCATOR
+   local let LOCATOR_COUNT=0
+   local let LOCATOR_RUNNING_COUNT=0
+   local VM_ENABLED=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.enabled")
+   if [ "$VM_ENABLED" == "truen" ]; then
+      local VM_HOSTS=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.locator.hosts")
+      for VM_HOST in ${VM_HOSTS}; do
+         let LOCATOR_COUNT=LOCATOR_COUNT+1
+         LOCATOR=`getVmLocatorName $VM_HOST`
+         pid=`getVmLocatorPid $VM_HOST $LOCATOR $__WORKSPACE`
+         if [ "$pid" != "" ]; then
+             let LOCATOR_RUNNING_COUNT=LOCATOR_RUNNING_COUNT+1
+         fi
+      done
+   else
+      local RUN_DIR=$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/clusters/$__CLUSTER/run
+      pushd $RUN_DIR > /dev/null 2>&1
+      LOCATOR_PREFIX=$(getLocatorPrefix)
+      for i in ${LOCATOR_PREFIX}*; do
+         if [ -d "$i" ]; then
+            LOCATOR=$i
+            LOCATOR_NUM=${LOCATOR##$LOCATOR_PREFIX}
+            let LOCATOR_COUNT=LOCATOR_COUNT+1
+            pid=`getLocatorPid $LOCATOR $WORKSPACE`
+            if [ "$pid" != "" ]; then
+               let LOCATOR_RUNNING_COUNT=LOCATOR_RUNNING_COUNT+1
+	    fi
+         fi
+      done
+      popd > /dev/null 2>&1
+   fi
+   echo $LOCATOR_RUNNING_COUNT
+}
+
+#
+# Returns the number of active (or running) members in the specified cluster.
+# Returns 0 if the workspace name or cluster name is unspecified or invalid.
+# This function works for both VM and non-VM workspaces.
+# @param workspaceName Workspace name.
+# @param clusterName   Cluster name.
+#
+function getActiveMemberCount
+{
+   # Members
+   local __WORKSPACE=$1
+   local __CLUSTER=$2
+   if [ "$__WORKSPACE" == "" ] || [ "$__CLUSTER" == "" ]; then
+      echo 0
+   fi
+   local MEMBER
+   local MEMBER_COUNT=0
+   local MEMBER_RUNNING_COUNT=0
+   local VM_ENABLED=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.enabled")
+   if [ "$VM_ENABLED" == "true" ]; then
+      local VM_HOSTS=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.hosts")
+      for VM_HOST in ${VM_HOSTS}; do
+         let MEMBER_COUNT=MEMBER_COUNT+1
+         MEMBER=`getVmMemberName $VM_HOST`
+         pid=`getVmMemberPid $VM_HOST $MEMBER $__WORKSPACE`
+         if [ "$pid" != "" ]; then
+             let MEMBER_RUNNING_COUNT=MEMBER_RUNNING_COUNT+1
+         fi
+      done
+   else
+      local RUN_DIR=$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/clusters/$__CLUSTER/run
+      pushd $RUN_DIR > /dev/null 2>&1
+      MEMBER_PREFIX=$(getMemberPrefix)
+      for i in ${MEMBER_PREFIX}*; do
+         if [ -d "$i" ]; then
+            MEMBER=$i
+            MEMBER_NUM=${MEMBER##$LOCATOR_PREFIX}
+            let MEMBER_COUNT=MEMBER_COUNT+1
+            pid=`getMemberPid $MEMBER $WORKSPACE`
+            if [ "$pid" != "" ]; then
+               let MEMBER_RUNNING_COUNT=MEMBER_RUNNING_COUNT+1
+	    fi
+         fi
+      done
+      popd > /dev/null 2>&1
+   fi
+   echo $MEMBER_RUNNING_COUNT
+}
+
+#
+# Returns the number of active (or running) locators in the specified cluster.
+# Returns 0 if the workspace name or cluster name is unspecified or invalid.
+# @param workspaceName Workspace name.
+# @param clusterName   Cluster name.
+#
+function getVmActiveLocatorCount
+{
+   # Locators
+   local __WORKSPACE=$1
+   local __CLUSTER=$2
+   if [ "$__WORKSPACE" == "" ] || [ "$__CLUSTER" == "" ]; then
+      return 0
+   fi
+   local LOCATOR
+   local LOCATOR_COUNT=0
+   local LOCATOR_RUNNING_COUNT=0
+   local VM_HOSTS=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.locator.hosts")
+   for VM_HOST in ${VM_HOSTS}; do
+      let LOCATOR_COUNT=LOCATOR_COUNT+1
+      LOCATOR=`getVmLocatorName $VM_HOST`
+      pid=`getVmLocatorPid $VM_HOST $LOCATOR $__WORKSPACE`
+      if [ "$pid" != "" ]; then
+          let LOCATOR_RUNNING_COUNT=LOCATOR_RUNNING_COUNT+1
+      fi
+   done
+   return $LOCATOR_RUNNING_COUNT
+}
+
+#
+# Returns the number of active (or running) members in the specified cluster.
+# Returns 0 if the workspace name or cluster name is unspecified or invalid.
+# @param workspaceName Workspace name.
+# @param clusterName   Cluster name.
+#
+function getVmActiveMemberCount
+{
+   # Members
+   local __WORKSPACE=$1
+   local __CLUSTER=$2
+   if [ "$__WORKSPACE" == "" ] || [ "$__CLUSTER" == "" ]; then
+      return 0
+   fi
+   local MEMBER
+   local MEMBER_COUNT=0
+   local MEMBER_RUNNING_COUNT=0
+   local VM_HOSTS=$(getWorkspaceClusterProperty $__WORKSPACE $__CLUSTER "vm.hosts")
+   for VM_HOST in ${VM_HOSTS}; do
+      let MEMBER_COUNT=MEMBER_COUNT+1
+      MEMBER=`getVmMemberName $VM_HOST`
+      pid=`getVmMemberPid $VM_HOST $MEMBER $__WORKSPACE`
+      if [ "$pid" != "" ]; then
+          let MEMBER_RUNNING_COUNT=MEMBER_RUNNING_COUNT+1
+      fi
+   done
+   return $MEMBER_RUNNING_COUNT
+}
+
+#
 # Returns the locator name prefix that is used in constructing the unique locator
 # name for a given locator number. See getLocatorName.
 # @required POD               Pod name.
@@ -798,9 +999,9 @@ function getAllMergedVmHosts
       # Replace , with space
       __VM_LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/,/ /g")
       __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
-      for i in "$__VM_LOCATOR_HOSTS"; do
+      for i in $__VM_LOCATOR_HOSTS; do
          found=false
-         for j in "$__VM_HOSTS"; do
+         for j in $__VM_HOSTS; do
             if [ "$i" == "$j" ]; then
                found=true
             fi
@@ -890,6 +1091,38 @@ function getClusterProperty
 {
    __PROPERTIES_FILE="$CLUSTERS_DIR/$CLUSTER/etc/cluster.properties"
    echo `getProperty $__PROPERTIES_FILE $1 $2`
+}
+
+#
+# Returns the specified workspace's cluster property value. It returns an empty string if
+# any of the following conditions is met.
+#   - workspaceName or clusterName is not specified
+#   - workspaceName or clusterName do not exist
+#
+# @param workspaceName Workspace name.
+#                      it assumes the current workspace.
+# @param clusterName   Cluster name.
+# @parma propertyName  Property name.
+# @param defaultValue  If the specified property is not found then this default value is returned.
+#
+function getWorkspaceClusterProperty
+{
+   local __WORKSPACE=$1
+   local __CLUSTER=$2
+   if [ "$__WORKSPACE" == "" ]; then
+      echo ""
+      return
+   fi
+   if [ "$__CLUSTER" == "" ]; then
+      echo ""
+      return
+   fi
+   __PROPERTIES_FILE="$__WORKSPACE/$__CLUSTER/etc/cluster.properties"
+   if [ -f "$__PROPERTIES_FILE" ]; then
+      echo `getProperty $__PROPERTIES_FILE $3 $4`
+   else
+      echo ""
+   fi
 }
 
 # 
@@ -1717,4 +1950,23 @@ function printSeeAlsoList
       echo "$LINE"
    fi
    echo ""
+}
+
+#
+# Displays a tree view of the specified list
+# @param list   Space separated list
+#
+function showTree
+{
+   local LIST=($1)
+   local len=${#LIST[@]}
+   local last_index
+   let last_index=len-1
+   for ((i = 0; i < $len; i++)); do
+      if [ $i -lt $last_index ]; then
+         echo "├── ${LIST[$i]}"
+      else
+         echo "└── ${LIST[$i]}"
+      fi
+   done
 }

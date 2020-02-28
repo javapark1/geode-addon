@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-?"
+   echo "-workspace -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -19,12 +19,18 @@ if [ "$HELP" == "true" ]; then
 cat <<EOF
 
 NAME
-   $EXECUTABLE - Display the current geode-addon workspace information
+   $EXECUTABLE - Display the specified geode-addon workspace information
 
 SYNOPSIS
    $EXECUTABLE [-?]
 
-   Displays the current workspace information.
+DESCRIPTION
+   Displays the specified workspace information.
+
+OPTIONS
+   -workspace workspace_name
+             Workspace name. If not specified, then it displays the current
+             workspace information.
 
 DEFAULT
    $EXECUTABLE
@@ -35,31 +41,17 @@ EOF
    exit
 fi
 
-#
-# Displays a tree view of the specified list
-# @param list   Space separated list
-#
-function showTree
-{
-   local LIST=($1)
-   local len=${#LIST[@]}
-   local last_index
-   let last_index=len-1
-   for ((i = 0; i < $len; i++)); do
-      if [ $i -lt $last_index ]; then
-         echo "├── ${LIST[$i]}"
-      else
-         echo "└── ${LIST[$i]}"
-      fi
-   done
-}
-
+if [ "$WORKSPACE_ARG" == "" ]; then
+   WORKSPACE_DIR=$GEODE_ADDON_WORKSPACE
+else
+   WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE_ARG
+fi
 echo ""
 echo "Workspaces Home:"
 echo "   $GEODE_ADDON_WORKSPACES_HOME"
 echo ""
 echo "Workspace:"
-echo "   $GEODE_ADDON_WORKSPACE"
+echo "   $WORKSPACE_DIR"
 echo ""
 echo "Workspace Type: "
 if [ "$VM_ENABLED" == "true" ]; then
@@ -68,24 +60,18 @@ else
 echo "   local"
 fi
 echo ""
-echo "Cluster Type: "
-echo "   $CLUSTER_TYPE"
-echo ""
-echo "Current Cluster: "
-echo "   $CLUSTER"
-echo ""
 echo "Clusters:"
-showTree "$(getClusters)"
+showTree "$(getClusters "clusters" $WORKSPACE_ARG)"
 echo ""
 echo "Apps:"
-showTree "$(getApps)"
+showTree "$(getClusters "apps" $WORKSPACE_ARG)"
 echo ""
 echo "Pods:"
-showTree "$(getPods)"
+showTree "$(getClusters "pods" $WORKSPACE_ARG)"
 echo ""
 echo "Kubernetes:"
-showTree "$(getK8s)"
+showTree "$(getClusters "k8s" $WORKSPACE_ARG)"
 echo ""
 echo "Docker:"
-showTree "$(getDockers)"
+showTree "$(getClusters "docker" $WORKSPACE_ARG)"
 echo ""

@@ -71,17 +71,12 @@ fi
 # VM cluster
 #
 if [ "$VM_HOSTS" == "" ]; then
-   VM_HOSTS=$(getAllMergedVmHosts)
    echo "----------------------------------------------------------------"
    echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
    if [ "$VM_HOSTS" == "" ]; then
-      echo >&2 "    ERROR: You must specify the '-vm' option or set at least one of the 'vm.locator.hosts' and"
-      echo >&2 "           'vm.hosts' properties in etc/cluster.properties. Command aborted."
+      echo >&2 "    ERROR: You must specify the '-vm' option or set VM_HOSTS in the workspace"
+      echo >&2 "           'setenv.sh' file. Command aborted."
       exit 1
-   else
-      echo "     INFO: The '-vm' option undefined. Using the following VM locator and member hosts found"
-      echo "           in etc/cluster.properties."
-      echo "           $VM_HOSTS"
    fi
    echo "----------------------------------------------------------------"
 fi

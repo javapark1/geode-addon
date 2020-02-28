@@ -152,6 +152,12 @@ if [ "$QUIET" == "false" ]; then
    echo "('continue' + Enter to continue deployment, other keys to quit.)"
    read INPUT
    echo ""
+   # trim string
+   INPUT=`echo "$INPUT" | xargs`
+   if [ "$INPUT" != "continue" ]; then
+      echo "Addon deployment aborted."
+      exit
+   fi
 fi
 
 

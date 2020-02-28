@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+. $SCRIPT_DIR/.addonenv.sh
+
+EXECUTABLE="`basename $0`"
+
+__options()
+{
+   echo "-workspace -simulate -quiet -?"
+}
+
+if [ "$OPTIONS" == "true" ]; then
+   __options
+   exit
+fi
+
+if [ "$HELP" == "true" ]; then
+cat <<EOF
+
+WORKSPACE
+   $GEODE_ADDON_WORKSPACE
+
+NAME
+   $EXECUTABLE - Remove the specified workspace
+
+WARNING
+   Permanently removes the specified workspace. By default, it runs in the interactive
+   mode if the '-quiet' option is not specified. In the interactive mode, you will
+   have an oportunity to abort the command. 
+
+   If the '-simulate' option is specified, then it simulates the workspace removal steps
+   and it will not remove the workspace. You should always use this option first to
+   to verfy the removal steps before actually removing the workspace.
+
+   Use this command with caution. It removes the entire workspace directory including
+   clusters, pods, apps, docker, k8s, bundles, etc. If a VM workspace, it removes the
+   workspace from all the VMs. 
+
+SYNOPSIS
+   $EXECUTABLE -workspace workspace_name [-run] [-quiet] [-?]
+
+DESCRIPTION
+   Removes the specified workspace.
+
+OPTIONS
+
+   -workspace workspace_name
+             Workspace name. The workspace name is required.
+
+   -simulate
+             If specified, then it only simulates the workspace removal steps without
+             actually removing the workspace. Always use this option fist to verify
+             the removal steps before comitting the workspace removal. This option
+             in the quiet mode.
+
+   -quiet
+             Quiet mode. Supresses the interactive prompts.
+
+DEFAULT
+   $EXECUTABLE -workspace workspace_name
+
+SEE ALSO
+EOF
+   printSeeAlsoList "*workspace*" $EXECUTABLE
+   exit
+fi
+
+if [ "$WORKSPACE_ARG" == "" ]; then
+   echo >&2 ""
+   echo >&2 "ERROR: Workspace name is not specified. Command aborted." 
+   echo >&2 ""
+   exit 1
+fi
+
+# Simulation runs in the quite mode
+QUIET=$SIMULATE
+
+# Prompt if the workspace exists
+WORKSPACE_DIR="$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE_ARG"
+if [ -d $WORKSPACE_DIR ]; then
+   if [ "$QUIET" == "false" ]; then
+      echo ""
+      echo "The following workspace will be permanently removed."
+      echo ""
+      echo "   Workspace: $WORKSPACE_ARG"
+      echo ""
+      echo "A backup of the entire workspace will be created before removing the workspace."
+      echo "Do you want to continue?"
+      echo "(Enter 'continue' + Enter to continue the workspace removal, other keys to abort.)"
+      read INPUT
+      if [ "$INPUT" != "continue" ]; then
+         echo "Workspace removal aborted."
+         exit
+      fi
+   fi
+else
+   echo >&2 ""
+   echo >&2 "ERROR: The specified workspace does not exist: [$WORKSPACE_ARG]. Command aborted."
+   echo >&2 ""
+   exit 1
+fi
+
+# cluster list
+CLUSTERS=$(getClusters "clusters" $WORKSPACE_ARG)
+
+# pod list
+PODS=$(getClusters "pods" $WORKSPACE_ARG)
+
+# k8s list
+K8S=$(getClusters "k8s" $WORKSPACE_ARG)
+
+# docker list
+DOCKERS=$(getClusters "docker" $WORKSPACE_ARG)
+
+
+# Display installed components
+if [ "$CLUSTERS" != "" ] || [ "$PODS" != "" ] || [ "$K8S" != "" ] || [ "$DOCKERS" != "" ] ; then
+   echo ""
+   echo "The workspace contains the following components."
+   if [ "$CLUSTERS" != "" ]; then
+      echo ""
+      echo "Clusters:"
+      showTree "$CLUSTERS"
+   fi
+   if [ "$PODS" != "" ]; then
+      echo ""
+      echo "Pods:"
+      showTree "$PODS"
+   fi
+   if [ "$K8S" != "" ]; then
+      echo ""
+      echo "Kubernetes:"
+      showTree "$K8S"
+   fi
+   if [ "$DOCKERS" != "" ]; then
+      echo ""
+      echo "Dockers:"
+      showTree "$DOCKER"
+   fi
+   if [ "$QUIET" == "false" ]; then
+      echo ""
+      echo -e "${CYellow}WARNING:${CNone} All of the components will be permanently removed. Do you want to proceed?"
+      echo "(Enter 'continue' + Enter to continue the workspace removal, other keys to abort.)"
+      read INPUT
+      # trim string
+      INPUT=`echo "$INPUT" | xargs`
+      if [ "$INPUT" != "continue" ]; then
+         echo ""
+         echo "Workspace removal aborted."
+         echo ""
+         exit
+      fi
+   fi
+fi
+
+# Check if any of the clusters is running. If so, abort.
+if [ "$CLUSTERS" != "" ]; then
+   for CLUSTER in $CLUSTERS; do
+      echo ""
+      echo "Cluster: $CLUSTER"
+      LOCATORS_RUNNING_COUNT=$(getActiveLocatorCount "$WORKSPACE_ARG" "$CLUSTER")
+      MEMBER_RUNNING_COUNT=$(getActiveMemberCount "$WORKSPACE_ARG" "$CLUSTER")
+      echo "   Locators running: $LOCATORS_RUNNING_COUNT"
+      echo "    Members running: $MEMBER_RUNNING_COUNT"
+      if [ $LOCATORS_RUNNING_COUNT -gt 0 ] || [ $MEMBER_RUNNING_COUNT -gt 0 ]; then
+         echo ""
+         echo -e "${CLightRed}ERROR:${CNone} The cluster has active locators/members. Please stop the cluster before"
+	 echo "       executing this command again. No actions were taken."
+	 echo "       Command aborted."
+	 echo ""
+         exit 
+      fi
+   done
+fi
+
+# Back up workspace in the workspaces/bundles directory.
+WORKSPACE_ARCHIVE_FILE="$GEODE_ADDON_WORKSPACES_HOME/.archive/$WORKSPACE_ARG.tar.gz"
+if [ ! -d $GEODE_ADDON_WORKSPACES_HOME/.archive ]; then
+   mkdir $GEODE_ADDON_WORKSPACES_HOME/.archive
+fi
+echo ""
+if [ "$SIMULATE" != "true" ]; then
+   echo "Creating a workspace backup..."
+   pushd $GEODE_ADDON_WORKSPACES_HOME > /dev/null 2>&1
+   echo tar -czf $WORKSPACE_ARCHIVE_FILE $WORKSPACE_ARG
+   if [ "$SIMULATE" != "true" ]; then
+      tar -czf $WORKSPACE_ARCHIVE_FILE $WORKSPACE_ARG
+      echo ""
+      echo "Workspace backup created:"
+      echo "   $WORKSPACE_ARCHIVE_FILE"
+   fi
+   popd > /dev/null 2>&1
+else
+   echo "Simulating workspace backup..."
+   echo tar -czf $WORKSPACE_ARCHIVE_FILE $WORKSPACE_ARG
+fi
+
+# Remove workspace
+echo ""
+if [ "$SIMULATE" != "true" ]; then
+   echo "Removing workspace..."
+else
+   echo "Simulating workspace removal..."
+fi
+if [ "$VM_ENABLED" == "true" ]; then
+   VM_WORKSPACES_HOME=$(getVmWorkspacesHome "$WORKSPACE_ARG")
+   if [ "$VM_WORKSPACES_HOME" == "" ]; then
+      echo "ERROR: Unable to determine the VM workspaces home path. Make sure VM_GEODE_ADDON_WORKSPACES_HOME"
+      echo "       is properly set in the following file:"
+      echo ""
+      echo "       $GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE_ARG/setenv.sh"
+      echo ""
+      echo "       Command aborted."
+      exit 1
+   fi
+   VM_WORKSPACE_DIR=$VM_WORKSPACES_HOME/$WORKSPACE_ARG
+   VM_HOSTS=$(getVmWorkspaceHosts "$WORKSPACE_ARG")
+   # Replace , with space
+   __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
+   for VM_HOST in $__VM_HOSTS; do
+      HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+      if [ "$HOSTNAME" == "" ]; then
+         echo "Invalid host [$VM_HOST]"
+         continue
+      elif [ "$HOSTNAME" == "$THIS_VM_HOSTNAME" ]; then
+         continue
+      fi
+      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $VM_WORKSPACE_DIR"
+      if [ "$RUN" == "true" ]; then
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $VM_WORKSPACE_DIR"
+      fi
+   done
+fi
+echo rm -r $WORKSPACE_DIR
+if [ "$SIMULATE" != "true" ]; then
+   rm -r $WORKSPACE_DIR
+fi
+
+# Display summary
+echo ""
+echo "----------------------------------------------------------------"
+if [ "$SIMULATE" != "true" ]; then
+   echo "Workspace Removed: $WORKSPACE_ARG"
+   if [ "$VM_ENABLED" == "true" ]; then
+   echo "              VMs: $VM_HOSTS"
+   fi
+   echo "           Backup: $WORKSPACE_ARCHIVE_FILE"
+   echo ""
+   echo "A full backup of workspace has been made. To recover the workspace,"
+   echo "execute the following command:"
+   echo ""
+   echo -e "   ${CLightGreen}recover_workspace $WORKSPACE_ARCHIVE_FILE${CNone}"
+else
+   echo "Workspace Simulated: $WORKSPACE_ARG"
+   if [ "$VM_ENABLED" == "true" ]; then
+   echo "                VMs: $VM_HOSTS"
+   fi
+   echo "             Backup: $WORKSPACE_ARCHIVE_FILE"
+fi
+echo "----------------------------------------------------------------"

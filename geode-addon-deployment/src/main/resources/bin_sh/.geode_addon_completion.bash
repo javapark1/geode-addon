@@ -108,9 +108,7 @@ __geode_addon_complete()
       ;;
 
    -workspace)
-      if [ "$second_word" != "create_workspace" ]; then
-         type_list=`getWorkspaces`
-      fi
+      type_list=`getWorkspaces`
       ;;
 
    -log)
@@ -394,9 +392,7 @@ __command_complete()
       fi
       ;;
    -workspace)
-      if [ "$command" != "create_workspace" ]; then
-         type_list=`getWorkspaces`
-      fi
+      type_list=`getWorkspaces`
       ;;
    -log)
       type_list="data gc locator"
