@@ -84,11 +84,11 @@ function displayVmClusterShort()
           let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
       fi
    done
-   echo "             WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   echo "               CLUSTER: $CLUSTER"
-   echo "            CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
-   echo "          CLUSTER_TYPE: $CLUSTER_TYPE"
-   echo "            Deployment: VM"
+   echo "       WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "         CLUSTER: $CLUSTER"
+   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
+   echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
+   echo "      Deployment: VM"
    if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
    echo -e "Locators Running: ${CLightGreen}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    else
@@ -99,7 +99,7 @@ function displayVmClusterShort()
    else
    echo -e " Members Running: ${CLightRed}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    fi
-   echo "               Version: $GEODE_VERSION"
+   echo "         Version: $GEODE_VERSION"
    echo ""
 } # displayVmClusterShort
 
@@ -243,16 +243,16 @@ function displayVmClusterLong()
       else
          NUM=$MEMBER_COUNT
       fi
-      echo "$NUM         Member: $MEMBER"
+      echo "$NUM        Member: $MEMBER"
 
       pid=`getVmMemberPid $VM_HOST $MEMBER $WORKSPACE`
       if [ -z $pid ]; then
          let DOWN_MEMBER_COUNT=DOWN_MEMBER_COUNT+1
-         echo -e "          STATE: ${CLightRed}Down${CNone}"
+         echo -e "           STATE: ${CLightRed}Down${CNone}"
          echo "             PID: N/A"
       else
          let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
-         echo -e "          STATE: ${CLightGreen}Running${CNone}"
+         echo -e "           STATE: ${CLightGreen}Running${CNone}"
          echo "             PID: $pid"
       fi
 
@@ -618,11 +618,11 @@ function displayClusterLong()
             pid=`getMemberPid $MEMBER $WORKSPACE`
             if [ -z $pid ]; then
                let DOWN_MEMBER_COUNT=DOWN_MEMBER_COUNT+1
-               echo -e "          STATE: ${CLightRed}Down${CNone}"
+               echo -e "           STATE: ${CLightRed}Down${CNone}"
                echo "             PID: N/A"
             else
                let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
-               echo -e "          STATE: ${CLightGreen}Running${CNone}"
+               echo -e "           STATE: ${CLightGreen}Running${CNone}"
                echo "             PID: $pid"
             fi
          else

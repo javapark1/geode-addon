@@ -51,7 +51,7 @@ OPTIONS
               A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
 
     -key private_key_file
-              Private key file path. To ssh into your VM such as ones on AWS, you may
+              Private key file path. To ssh into your VM such as the ones on AWS, you may
               supply your private key file. Normally, the private key file is not
               required if you have set public-key authentication.
 

@@ -44,7 +44,7 @@ DESCRIPTION
    Copies the specified file or directory to the to the specified VMs. The
    file path can be an absolute or a relative path but it must exist in the
    workspace directory hiearchy. To copy non-workspace files, specify the 'mirror'
-   'mirror' option, which copies the file to the exact same path as the local path.
+   option, which copies the file to the exact same path as the local path.
 
    If the file path is a directory then all of the files in the directory
    are recursively copied.
@@ -62,8 +62,8 @@ OPTIONS
               A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
 
     -key private_key_file
-              Private key file path. To ssh into your VM such as ones on AWS, you may
-              to supply your private key file. Normally, the private key file is not
+              Private key file path. To ssh into your VM such as the ones on AWS, you may
+              supply your private key file. Normally, the private key file is not
               required if you have set public-key authentication.
 
     -mirror

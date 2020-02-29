@@ -423,9 +423,9 @@ GFSH_OPTS="$GFSH_OPTS --dir=$MEMBER_DIR \
       --disable-default-server=true \
       --name=$MEMBER \
       --bind-address=$BIND_ADDRESS \
-      --statistic-archive-file=$STATS_FILE \
       --locators=$LOCATOR_TCP_LIST \
-      --hostname-for-clients=$HOSTNAME_FOR_CLIENTS"
+      --hostname-for-clients=$HOSTNAME_FOR_CLIENTS \
+      --statistic-archive-file=$STATS_FILE"
 # server-port does not work geode-1.11.0
 #     --server-port=$MEMBER_PORT"
 

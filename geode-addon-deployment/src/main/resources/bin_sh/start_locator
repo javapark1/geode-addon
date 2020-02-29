@@ -289,6 +289,8 @@ else
    __LOG_DIR=$LOG_DIR
 fi
 GEMFIRE_PROPERTY_FILE="$ETC_DIR/gemfire.properties"
+STATS_FILE_NAME=${LOCATOR}.gfs
+STATS_FILE=$STATS_DIR/${STATS_FILE_NAME}
 export LOG_FILE_NAME=${LOCATOR}.log
 export LOG_FILE=$LOG_DIR/${LOG_FILE_NAME}
 if [[ ${OS_NAME} == CYGWIN* ]]; then
@@ -371,6 +373,7 @@ PULSE_PROPERTIES="--J=-Dpulse.Log-File-Name=pulse --J=-Dpulse.Log-File-Location=
 JAVA_OPTS="$JAVA_OPTS $PULSE_PROPERTIES"
 JAVA_OPTS="--J=-Dpado.vm.id=${LOCATOR} \
    --J=-Dgeode-addon.workspace=$WORKSPACE \
+   --J=-Dgemfire.statistic-archive-file=$STATS_FILE \
    --J=-Dgemfire.log-file=$LOG_FILE $JAVA_OPTS"
 GFSH_OPTS="--name=${LOCATOR} \
    --locators=$LOCATOR_TCP_LIST \
@@ -392,6 +395,9 @@ else
    # LOG_FILE might not exist if a VM bundle has been deployed.
    if  [ ! -d "$LOG_DIR" ]; then
       mkdir -p $LOG_DIR
+   fi
+   if  [ ! -d "$STATS_DIR" ]; then
+      mkdir -p $STATS_DIR
    fi
    if [ "$RUN_SCRIPT" != "" ]; then
       $RUN_SCRIPT >> $LOG_FILE &
