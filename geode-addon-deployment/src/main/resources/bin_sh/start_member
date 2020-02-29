@@ -494,7 +494,7 @@ else
       if [ "$FG_SPECIFIED" == "true" ]; then
          gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH
       else
-         gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH &
+         gfsh start server $GFSH_OPTS $JAVA_OPTS --classpath=$CLASSPATH >> $LOG_FILE &
       fi
    fi
    PID=`getMemberPid $MEMBER $WORKSPACE`
@@ -512,7 +512,9 @@ else
 echo "             Pod: $POD"
 fi
 echo "          Member: $MEMBER"
+if [ "$FG_SPECIFIED" == "true" ]; then
 echo "             PID: $PID"
+fi
 echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
 echo "     WORKING_DIR: $MEMBER_DIR"
 echo "      CONFIG_DIR: $ETC_DIR"

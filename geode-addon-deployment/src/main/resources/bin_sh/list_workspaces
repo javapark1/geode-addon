@@ -126,6 +126,7 @@ for ((j = 0; j < ${#WORKSPACES[@]}; j++)); do
    fi
    displayTreeNode "apps"
    displayTreeNode "clusters"
+   displayTreeNode "docker"
    displayTreeNode "k8s"
    displayTreeNode "pods"
 done

@@ -54,8 +54,32 @@ EOF
    exit
 fi
 
+# 
+# VM cluster
+#
+VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+if [ "$VM_ENABLED" == "true" ] && [ "$REMOTE_SPECIFIED" == "false" ]; then
+   DEFAULT_USER=$(whoami)
+   VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
+   VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+   if [ "$VM_KEY" != "" ]; then 
+      VM_KEY="-i $VM_KEY"
+   fi
+   VM_HOSTS=$(getAllMergedVmHosts)
+   # Replace , with space
+   __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
+   __MEMBER_NUMBER=0
+   VM_HOST=""
+   for VM_HOST in $__VM_HOSTS; do
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/clean_cluster -cluster $CLUSTER -remote -workspace $VM_GEODE_ADDON_WORKSPACE $*"
+   done
+   exit
+fi
+
 # Get workspace name
-WORKSPACE=${GEODE_ADDON_WORKSPACE##*/}
+if [ "$WORKSPACE" == "" ]; then
+   WORKSPACE=${GEODE_ADDON_WORKSPACE##*/}
+fi
 
 POD=`getClusterProperty "pod.name" $POD`
 NODE_NAME_PREFIX=`getClusterProperty "node.name.prefix" $NODE_NAME_PREFIX`
@@ -84,7 +108,7 @@ for i in ${LOCATOR_PREFIX}*; do
 
       NODE_LOCAL=${NODE_NAME_PREFIX}-${LOCATOR_NUMBER}.local
       LOCATOR_DIR=$RUN_DIR/$LOCATOR
-      PID=`getLocator $LOCATOR $WORKSPACE`
+      PID=`getLocatorPid $LOCATOR $WORKSPACE`
       if [ -z "$PID" ]; then
          rm -f $LOG_DIR/${LOCATOR}*.log > /dev/null 2>&1
          rm -f $STATS_DIR/${LOCATOR}*.gfs > /dev/null 2>&1
@@ -94,7 +118,7 @@ for i in ${LOCATOR_PREFIX}*; do
          echo "----------------------------------------------------------------"
          echo "    WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "      Locator: $LOCATOR"
-         echo "          PID: Down (Not Running)"
+         echo -e "          PID: ${CLightRed}Down (Not Running)${CNone}"
          echo "  Working Dir: $LOCATOR_DIR"
          echo "      Log Dir: $LOG_DIR"
          echo "    Stats Dir: $STATS_DIR"
@@ -109,7 +133,7 @@ for i in ${LOCATOR_PREFIX}*; do
          echo "----------------------------------------------------------------"
          echo "    WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "      Locator: $LOCATOR"
-         echo "          PID: $PID"
+         echo -e "          PID: ${CLightGreen}$PID${CNone}"
          echo "  Working Dir: $LOCATOR_DIR"
          echo "      Log Dir: $LOG_DIR"
          echo "       Status: This locator is running. Unable to remove generated files. Command aborted."
@@ -134,7 +158,7 @@ for i in ${MEMBER_PREFIX}*; do
          echo "----------------------------------------------------------------"
          echo "    WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "       Member: $MEMBER"
-         echo "          PID: Down (Not Running)"
+         echo -e "          PID: ${CLightRed}Down (Not Running)${CNone}"
          echo "  Working Dir: $MEMBER_DIR"
          echo "      Log Dir: $LOG_DIR"
          echo "    Stats Dir: $STATS_DIR"
@@ -149,7 +173,7 @@ for i in ${MEMBER_PREFIX}*; do
          echo "----------------------------------------------------------------"
          echo "    WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "       Member: $MEMBER"
-         echo "          PID: $PID"
+         echo -e "          PID: ${CLightGreen}$PID${CNone}"
          echo "  Working Dir: $MEMBER_DIR"
          echo "      Log Dir: $LOG_DIR"
          echo "       Status: This member is running. Unable to remove generated files. Command aborted."
