@@ -115,7 +115,7 @@ if [ "$INSTALL_ADDON_HOST_LIST" != "" ]; then
       echo "Deploying $ROOT_DIR_NAME to $VM_HOST..."
       ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
       scp -q $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
-      ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
    done
 fi
 
@@ -129,7 +129,6 @@ COMMAND="if [ -d "$BASE_DIR" ]; then echo true; else echo false; fi"
 EXISTING_HOST_COUNT=0
 NEW_HOST_COUNT=0
 ABS_PATH="$GEODE_ADDON_WORKSPACE"
-TO_PATH="$VM_GEODE_ADDON_WORKSPACE"
 INITENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/initenv.sh" ]; then echo true; else echo false; fi"
 ADDONENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh" ]; then echo true; else echo false; fi"
 SETENV_COMMAND="if [ -f "$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh" ]; then echo true; else echo false; fi"
@@ -150,8 +149,11 @@ sed -e 's|export JAVA_HOME=.*$|export JAVA_HOME='\"${VM_JAVA_HOME}\"'|' \
     $GEODE_ADDON_WORKSPACES_HOME/setenv.sh > /tmp/workspaces_setenv.sh
 
 echo "Workspace sync: $WORKSPACE_NAME"
+pushd $ABS_PATH > /dev/null 2>&1
+tar czf /tmp/vm_sync.tar.gz .addonenv.sh *.sh apps clusters lib plugins
+popd > /dev/null 2>&1
 for VM_HOST in $__VM_HOSTS; do
-   HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+   HOSTNAME=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname")
    if [ "$HOSTNAME" == "" ]; then
       echo "Invalid host [$VM_HOST]"
       continue
@@ -160,8 +162,10 @@ for VM_HOST in $__VM_HOSTS; do
    fi
 
    echo "   Synchronizing $VM_HOST..."
-   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $TO_PATH"
-   scp -q -r $VM_KEY $ABS_PATH/.addonenv.sh $ABS_PATH/*.sh $ABS_PATH/apps $ABS_PATH/clusters /tmp/setenv.sh $ABS_PATH/lib $ABS_PATH/plugins $VM_USER@$VM_HOST:$TO_PATH/
+   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE"
+   scp -q -r $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
+   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf /tmp/vm_sync.tar.gz; rm /tmp/vm_sync.tar.gz"
+   scp -q $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
 
    # Configure the workspaces directory if not configured already
    INITENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$INITENV_COMMAND")
@@ -174,7 +178,7 @@ for VM_HOST in $__VM_HOSTS; do
    if [ "$ADDONENV_EXISTS" != "true" ]; then
       sed -e 's|export GEODE_ADDON_WORKSPACES_HOME=.*$|export GEODE_ADDON_WORKSPACES_HOME='\"$VM_GEODE_ADDON_WORKSPACES_HOME\"'|' \
           $GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh > /tmp/.addonenv.sh
-      scp -q -r /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      scp -q -r $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
    fi
    if [ "$SETENV_EXISTS" != "true" ]; then
       scp -q -r $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
@@ -182,6 +186,7 @@ for VM_HOST in $__VM_HOSTS; do
 done
 
 # Remove up temp files
+rm /tmp/vm_sync.tar.gz > /dev/null 2>&1
 rm /tmp/setenv.sh  > /dev/null 2>&1
 rm /tmp/.addonenv.sh  > /dev/null 2>&1
 rm /tmp/workspaces_setenv.sh  > /dev/null 2>&1

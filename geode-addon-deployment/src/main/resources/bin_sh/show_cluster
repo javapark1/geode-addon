@@ -84,6 +84,7 @@ function displayVmClusterShort()
           let RUNNING_MEMBER_COUNT=RUNNING_MEMBER_COUNT+1
       fi
    done
+   
    echo "       WORKSPACE: $GEODE_ADDON_WORKSPACE"
    echo "         CLUSTER: $CLUSTER"
    echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
@@ -202,6 +203,7 @@ function displayVmClusterLong()
       echo "    LOCATOR_PORT: $LOCATOR_PORT"
 #      echo "      DEBUG_PORT: $DEBUG_PORT"
 #      echo " PROMETHEUS_PORT: $PROMETHEUS_PORT"
+      echo "       PULSE_URL: $PULSE_URL"
       echo "         JMX_URL: $JMX_URL"
       echo "     Working Dir: $LOCATOR_DIR"
       echo "        LOG_FILE: $LOG_FILE"

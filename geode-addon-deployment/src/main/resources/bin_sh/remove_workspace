@@ -216,6 +216,9 @@ if [ "$VM_ENABLED" == "true" ]; then
    fi
    VM_WORKSPACE_DIR=$VM_WORKSPACES_HOME/$WORKSPACE_ARG
    VM_HOSTS=$(getVmWorkspaceHosts "$WORKSPACE_ARG")
+   if [ "$VM_PRIVATE_KEY_FILE" != "" ]; then
+      VM_KEY="-i $VM_PRIVATE_KEY_FILE"
+   fi
    # Replace , with space
    __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
    for VM_HOST in $__VM_HOSTS; do

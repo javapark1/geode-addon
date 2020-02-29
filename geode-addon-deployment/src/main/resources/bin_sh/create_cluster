@@ -321,7 +321,12 @@ function writeCluster()
    echo "# SSH user name. If not specified then defaults to the shell login session user name." >> $ETC_DIR/cluster.properties
    echo "vm.user=$VM_USER" >> $ETC_DIR/cluster.properties
    echo "# Optional private key file path. You may use the private key file for AWS EC2, for example. " >> $ETC_DIR/cluster.properties
-   echo "#vm.privateKeyFile=$VM_KEY_FILE" >> $ETC_DIR/cluster.properties
+   if [ "$VM_PRIVATE_KEY_FILE" == "" ]; then
+      echo "#vm.privateKeyFile=$VM_KEY_FILE" >> $ETC_DIR/cluster.properties
+   else
+      echo "vm.privateKeyFile=$VM_PRIVATE_KEY_FILE" >> $ETC_DIR/cluster.properties
+   fi
+
    echo "" >> $ETC_DIR/cluster.properties
 
    if [ "$VM_ENABLED" == "true" ]; then
@@ -344,8 +349,9 @@ function writeCluster()
 # 
 # VM cluster
 #
-DEFAULT_USER=$(whoami)
-VM_USER=$DEFAULT_USER
+if [ "$VM_USER" == "" ]; then
+   VM_USER=$(whami)
+fi
 VM_KEY_FILE="/your/private/keyfile.pem"
 if [ "$VM_ENABLED" == "true" ]; then
    if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
