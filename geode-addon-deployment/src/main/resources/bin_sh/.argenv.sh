@@ -86,6 +86,7 @@ KILL=
 DEBUG=
 DIR=
 CLEAN=
+LOCAL=false
 QUIET=false
 LONG=false
 DATASOURCE=
@@ -248,6 +249,8 @@ do
       PIDONLY=true
    elif [ "$i" == "-clean" ]; then
       CLEAN=true
+   elif [ "$i" == "-local" ]; then
+      LOCAL=true
    elif [ "$i" == "-quiet" ]; then
       QUIET=true
    elif [ "$i" == "-long" ]; then

@@ -114,7 +114,7 @@ if [ "$INSTALL_ADDON_HOST_LIST" != "" ]; then
    for VM_HOST in $INSTALL_ADDON_HOST_LIST; do
       echo "Deploying $ROOT_DIR_NAME to $VM_HOST..."
       ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
-      scp -q $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
       ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
    done
 fi
@@ -158,7 +158,7 @@ pushd $ABS_PATH > /dev/null 2>&1
 tar czf /tmp/vm_sync.tar.gz .addonenv.sh *.sh $PRIVATE_KEY_FILE_NAME apps clusters lib plugins
 popd > /dev/null 2>&1
 for VM_HOST in $__VM_HOSTS; do
-   HOSTNAME=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname")
+   HOSTNAME=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "hostname")
    if [ "$HOSTNAME" == "" ]; then
       echo "Invalid host [$VM_HOST]"
       continue
@@ -168,9 +168,9 @@ for VM_HOST in $__VM_HOSTS; do
 
    echo "   Synchronizing $VM_HOST..."
    ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE"
-   scp -q -r $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
+   scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
    ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf /tmp/vm_sync.tar.gz; rm /tmp/vm_sync.tar.gz"
-   scp -q $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
+   scp -q -o stricthostkeychecking=no $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
 
    # Configure the workspaces directory if not configured already
    INITENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$INITENV_COMMAND")
@@ -178,15 +178,15 @@ for VM_HOST in $__VM_HOSTS; do
    SETENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$SETENV_COMMAND")
 
    if [ "$INITENV_EXISTS" != "true" ]; then
-      scp -q -r $VM_KEY $GEODE_ADDON_WORKSPACES_HOME/initenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      scp -q -r -o stricthostkeychecking=no $VM_KEY $GEODE_ADDON_WORKSPACES_HOME/initenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
    fi
    if [ "$ADDONENV_EXISTS" != "true" ]; then
       sed -e 's|export GEODE_ADDON_WORKSPACES_HOME=.*$|export GEODE_ADDON_WORKSPACES_HOME='\"$VM_GEODE_ADDON_WORKSPACES_HOME\"'|' \
           $GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh > /tmp/.addonenv.sh
-      scp -q -r $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
    fi
    if [ "$SETENV_EXISTS" != "true" ]; then
-      scp -q -r $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
+      scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
    fi
 done
 

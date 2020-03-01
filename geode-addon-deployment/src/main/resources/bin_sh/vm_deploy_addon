@@ -109,7 +109,7 @@ COMMAND="if [ -d "$VM_GEODE_ADDON_HOME" ]; then echo true; else echo false; fi"
 EXISTING_HOST_COUNT=0
 NEW_HOST_COUNT=0
 for VM_HOST in $__VM_HOSTS; do
-   HOST_NAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+   HOST_NAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "hostname"`
    if [ "$HOST_NAME" == "$THIS_VM_HOSTNAME" ]; then
       continue
    fi
@@ -183,7 +183,7 @@ if [ "$NEW_HOSTS" != "" ]; then
    for VM_HOST in $NEW_HOSTS; do
       echo "   Deploying to $VM_HOST..."
       ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
-      scp -q $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
       ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
    done
 fi
@@ -192,7 +192,7 @@ if [ "$EXISTING_HOSTS" != "" ]; then
    echo "Existing Hosts:"
    for VM_HOST in $EXISTING_HOSTS; do
       echo "   Deploying to $VM_HOST..."
-      scp -q $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
       ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
    done
 fi

@@ -71,7 +71,7 @@ if [ "$VM_ENABLED" == "true" ] && [ "$REMOTE_SPECIFIED" == "false" ]; then
    __MEMBER_NUMBER=0
    VM_HOST=""
    for VM_HOST in $__VM_HOSTS; do
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/clean_cluster -cluster $CLUSTER -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE $*"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/clean_cluster -cluster $CLUSTER -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE $*"
    done
    exit
 fi

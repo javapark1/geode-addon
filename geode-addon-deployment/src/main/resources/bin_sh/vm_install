@@ -157,7 +157,7 @@ function installProduct
             break
          done
 	 # Upload to the base VM
-         scp -q -r $VM_KEY $PRODUCT_PATH $VM_USER@$BASE_VM:/tmp/
+         scp -q -r -o stricthostkeychecking=no $VM_KEY $PRODUCT_PATH $VM_USER@$BASE_VM:/tmp/
       fi
 
       for VM_HOST in $PRODUCT_HOME_NOT_FOUND_LIST; do

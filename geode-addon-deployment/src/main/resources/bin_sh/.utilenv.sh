@@ -34,10 +34,7 @@ function trimString
 #
 function trimDoubleQuotes
 {
-   _str=$1
-   _str2=${_str#"\""}
-   _str2=${_str2%"\""}
-   echo $_str2
+    echo $1 | sed -e 's/^"//' -e 's/"$//'
 }
 
 #
@@ -293,7 +290,7 @@ function getVmWorkspaceHosts
    if [ "$__WORKSPACE" != "" ]; then
       local __VM_HOSTS=$(grep "^VM_HOSTS=" $GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/setenv.sh)
       __VM_HOSTS=${__VM_HOSTS##"VM_HOSTS="}
-      __VM_HOSTS=$(trimDoubleQuotes $__VM_HOSTS)
+      __VM_HOSTS=$(trimDoubleQuotes "$__VM_HOSTS")
    fi
    echo $__VM_HOSTS
 }
@@ -310,7 +307,7 @@ function getVmWorkspacesHome
    if [ "$__WORKSPACE" != "" ]; then
       local __VM_WORKSPACES_HOME=$(grep "^VM_GEODE_ADDON_WORKSPACES_HOME=" $GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE/setenv.sh)
       __VM_WORKSPACES_HOME=${__VM_WORKSPACES_HOME##"VM_GEODE_ADDON_WORKSPACES_HOME="}
-      __VM_WORKSPACES_HOME=$(trimDoubleQuotes $__VM_WORKSPACES_HOME)
+      __VM_WORKSPACES_HOME=$(trimDoubleQuotes "$__VM_WORKSPACES_HOME")
    fi
    echo $__VM_WORKSPACES_HOME
 }

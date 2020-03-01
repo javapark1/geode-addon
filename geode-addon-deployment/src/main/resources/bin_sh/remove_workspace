@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-workspace -simulate -quiet -?"
+   echo "-workspace -simulate -local -quiet -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -38,7 +38,7 @@ WARNING
    workspace from all the VMs. 
 
 SYNOPSIS
-   $EXECUTABLE -workspace workspace_name [-run] [-quiet] [-?]
+   $EXECUTABLE -workspace workspace_name [-simulate] [-local] [-quiet] [-?]
 
 DESCRIPTION
    Removes the specified workspace.
@@ -52,7 +52,13 @@ OPTIONS
              If specified, then it only simulates the workspace removal steps without
              actually removing the workspace. Always use this option fist to verify
              the removal steps before comitting the workspace removal. This option
-             in the quiet mode.
+             sets in the quiet mode.
+
+   -local
+             If specified, then it removes the workspace from the local file system only.
+             If the workspace is a VM workspace then the workspace in the VMs will not
+             be removed. Use this option only if the VMs cannot be connected or no longer
+             available.
 
    -quiet
              Quiet mode. Supresses the interactive prompts.
@@ -199,11 +205,15 @@ fi
 # Remove workspace
 echo ""
 if [ "$SIMULATE" != "true" ]; then
-   echo "Removing workspace..."
+   if [ "$LOCAL" == "true" ]; then
+      echo "Removing local workspace..."
+   else
+      echo "Removing workspace..."
+   fi
 else
    echo "Simulating workspace removal..."
 fi
-if [ "$VM_ENABLED" == "true" ]; then
+if [ "$VM_ENABLED" == "true" ] && [ "$LOCAL" != "true" ]; then
    VM_WORKSPACES_HOME=$(getVmWorkspacesHome "$WORKSPACE_ARG")
    if [ "$VM_WORKSPACES_HOME" == "" ]; then
       echo "ERROR: Unable to determine the VM workspaces home path. Make sure VM_GEODE_ADDON_WORKSPACES_HOME"
@@ -222,16 +232,16 @@ if [ "$VM_ENABLED" == "true" ]; then
    # Replace , with space
    __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
    for VM_HOST in $__VM_HOSTS; do
-      HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname"`
+      HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "hostname"`
       if [ "$HOSTNAME" == "" ]; then
          echo "Invalid host [$VM_HOST]"
          continue
       elif [ "$HOSTNAME" == "$THIS_VM_HOSTNAME" ]; then
          continue
       fi
-      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $VM_WORKSPACE_DIR"
+      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm -rf $VM_WORKSPACE_DIR"
       if [ "$RUN" == "true" ]; then
-         ssh -q -n $VM_KEY $VM_USER@$VM_HOST "rm -rf $VM_WORKSPACE_DIR"
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm -rf $VM_WORKSPACE_DIR"
       fi
    done
 fi
