@@ -182,7 +182,7 @@ for VM_HOST in $__VM_HOSTS; do
    fi
 
    echo "   Copying to $VM_HOST..."
-   scp -q -r $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
+   scp -q -r -o stricthostkeychecking=no $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
 done
 
 echo "Copy complete."

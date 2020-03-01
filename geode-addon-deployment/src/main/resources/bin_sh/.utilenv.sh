@@ -622,7 +622,7 @@ function getLocatorPid
    local __IS_GUEST_OS_NODE=`isGuestOs $NODE_LOCAL`
    local locators
    if [ "$__IS_GUEST_OS_NODE" == "true" ] && [ "$POD" != "local" ] && [ "$REMOTE_SPECIFIED" == "false" ]; then
-      locators=`ssh -q -n $SSH_USER@$NODE_LOCAL "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__LOCATOR | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+      locators=`ssh -q -n $SSH_USER@$NODE_LOCAL -o stricthostkeychecking=no "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__LOCATOR | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    else
       locators=`"$JAVA_HOME/bin/jps" -v | grep "pado.vm.id=$__LOCATOR" | grep "geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    fi
@@ -646,7 +646,7 @@ function getMemberPid
    __WORKSPACE=$2
    __IS_GUEST_OS_NODE=`isGuestOs $NODE_LOCAL`
    if [ "$__IS_GUEST_OS_NODE" == "true" ] && [ "$POD" != "local" ] && [ "$REMOTE_SPECIFIED" == "false" ]; then
-      members=`ssh -q -n $SSH_USER@$NODE_LOCAL "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+      members=`ssh -q -n $SSH_USER@$NODE_LOCAL -o stricthostkeychecking=no "$JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    else
       members=`"$JAVA_HOME/bin/jps" -v | grep "pado.vm.id=$__MEMBER" | grep "geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    fi
@@ -673,7 +673,7 @@ function getVmLocatorPid
    local __HOST=$1
    local __MEMBER=$2
    local __WORKSPACE=$3
-   local locators=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+   local locators=`ssh -q -n $VM_KEY $VM_USER@$__HOST -o stricthostkeychecking=no "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    spids=""
    for j in $locators; do
       spids="$j $spids"
@@ -697,7 +697,7 @@ function getVmMemberPid
    __HOST=$1
    __MEMBER=$2
    __WORKSPACE=$3
-   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST  -o stricthostkeychecking=no "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    spids=""
    for j in $members; do
       spids="$j $spids"
@@ -935,7 +935,7 @@ function getMemberName
 function getVmLocatorName
 {
    local __HOST=$1
-   local __HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$__HOST "hostname"`
+   local __HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$__HOST -o stricthostkeychecking=no "hostname"`
    echo "${CLUSTER}-locator-${__HOSTNAME}-01"
 }
 
@@ -948,7 +948,7 @@ function getVmLocatorName
 function getVmMemberName
 {
    __HOST=$1
-   __HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$__HOST "hostname"`
+   __HOSTNAME=`ssh -q -n $VM_KEY $VM_USER@$__HOST -o stricthostkeychecking=no "hostname"`
    echo "${CLUSTER}-member-${__HOSTNAME}-01"
 }
 

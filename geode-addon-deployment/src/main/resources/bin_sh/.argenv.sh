@@ -40,6 +40,7 @@ CLUSTER_SPECIFIED=false
 FG_SPECIFIED=false
 MEMBER_NUM=1
 MEMBER_NUM_SPECIFIED=false
+REMOTE=
 REMOTE_SPECIFIED=false
 MIRROR_SPECIFIED=false
 VM_SPECIFIED=false
@@ -157,6 +158,8 @@ do
       UUID=$i
    elif [ "$PREV" == "-id" ]; then
       ID=$i
+   elif [ "$PREV" == "-remote" ]; then
+      REMOTE=$i
    elif [ "$PREV" == "-vm" ]; then
       VM_HOSTS_ARG=$i
    elif [ "$PREV" == "-vm-java" ]; then

@@ -149,8 +149,13 @@ sed -e 's|export JAVA_HOME=.*$|export JAVA_HOME='\"${VM_JAVA_HOME}\"'|' \
     $GEODE_ADDON_WORKSPACES_HOME/setenv.sh > /tmp/workspaces_setenv.sh
 
 echo "Workspace sync: $WORKSPACE_NAME"
+if [ -f "$VM_PRIVATE_KEY_FILE" ]; then
+   PRIVATE_KEY_FILE_NAME=$(basename $VM_PRIVATE_KEY_FILE)
+else
+   PRIVATE_KEY_FILE_NAME=""
+fi
 pushd $ABS_PATH > /dev/null 2>&1
-tar czf /tmp/vm_sync.tar.gz .addonenv.sh *.sh apps clusters lib plugins
+tar czf /tmp/vm_sync.tar.gz .addonenv.sh *.sh $PRIVATE_KEY_FILE_NAME apps clusters lib plugins
 popd > /dev/null 2>&1
 for VM_HOST in $__VM_HOSTS; do
    HOSTNAME=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST "hostname")
@@ -190,9 +195,6 @@ rm /tmp/vm_sync.tar.gz > /dev/null 2>&1
 rm /tmp/setenv.sh  > /dev/null 2>&1
 rm /tmp/.addonenv.sh  > /dev/null 2>&1
 rm /tmp/workspaces_setenv.sh  > /dev/null 2>&1
-
-echo -e "${CLightGreen}Workspace sync complete.${CNone}"
-echo ""
 
 # Determine and display all VMs that do not have Java and Geode installed.
 JAVA_HOME_COMMAND="if [ -d "$VM_JAVA_HOME" ]; then echo true; else echo false; fi"
@@ -239,3 +241,6 @@ if [ "$GEODE_HOME_NOT_FOUND_LIST" != "" ]; then
    echo "   vm_install -geode $GEODE_DIR_NAME.tar.gz"
    echo "------------------------------------------------------------------------------------------"
 fi
+
+echo -e "${CLightGreen}Workspace sync complete.${CNone}"
+echo ""

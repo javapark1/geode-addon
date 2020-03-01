@@ -84,27 +84,22 @@ if [ "$VM_ENABLED" == "true" ]; then
    __LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/,/ /g")
    DEFAULT_USER=$(whoami)
    VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
-   VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+   #VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+   VM_KEY=$VM_PRIVATE_KEY_FILE
    if [ "$VM_KEY" != "" ]; then 
       VM_KEY="-i $VM_KEY"
    fi
    for VM_HOST in $__LOCATOR_HOSTS; do
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote -workspace $VM_GEODE_ADDON_WORKSPACE"
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE"
    done
 
    # Replace , with space
    __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
-   DEFAULT_USER=$(whoami)
-   VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
-   VM_KEY=`getClusterProperty "vm.privateKeyFile"`
-   if [ "$VM_KEY" != "" ]; then 
-      VM_KEY="-i $VM_KEY"
-   fi
    for VM_HOST in $__VM_HOSTS; do
       if [ "$FG_SPECIFIED" == "true" ]; then
-         ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote -workspace $VM_GEODE_ADDON_WORKSPACE"
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE"
       else
-         ssh -q -n $VM_KEY $VM_USER@$VM_HOST "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote -workspace $VM_GEODE_ADDON_WORKSPACE" &
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_member -cluster $CLUSTER -vm $VM_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE" &
       fi
    done
    exit

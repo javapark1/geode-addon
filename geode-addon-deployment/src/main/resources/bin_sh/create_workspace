@@ -169,6 +169,8 @@ if [ "$QUIET" == "true" ]; then
    if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
       VM_HOSTS=$VM_HOSTS_ARG
    fi
+   # Remove all spaces from VM_HOSTS
+   VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/ //g")
    VM_USER=$VM_USER_ARG
    VM_PRIVATE_KEY_FILE=$VM_PRIVATE_KEY_FILE_ARG
 
@@ -405,8 +407,8 @@ else
          if [ "$INPUT" != "" ]; then
             VM_HOSTS=$INPUT
          fi
-         # Remove spaces
-         VM_HOSTS=${VM_HOSTS//[[:space:]]/}
+         # Remove all spaces from VM_HOSTS
+         VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/ //g")
 
          # VM_USER
          echo "Enter VM user name."

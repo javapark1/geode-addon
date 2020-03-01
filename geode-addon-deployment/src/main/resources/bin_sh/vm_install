@@ -111,51 +111,95 @@ for VM_HOST in $__VM_HOSTS; do
 done
 
 echo ""
-# Install Java
-if [ "$JAVA_HOME_ARG" != "" ]; then
-   if [ ! -f "$JAVA_HOME_ARG" ]; then
-      echo >&2 "ERROR: Invalid path [$JAVA_HOME_ARG]."
-      echo >&2 "       Command aborted."
-      exit 1
-   fi
-   JAVA_DIST_FILE_NAME=$(basename $JAVA_HOME_ARG)
-   JAVA_PARENT_PATH="$(dirname "$VM_JAVA_HOME")"
-   echo "$JAVA_DIST_FILE_NAME"
-   if [ "$JAVA_HOME_NOT_FOUND_LIST" != "" ]; then
-      for VM_HOST in $JAVA_HOME_NOT_FOUND_LIST; do
-         echo "   Installing $VM_HOST..."
-         scp -q -r $VM_KEY $JAVA_HOME_ARG $VM_USER@$VM_HOST:/tmp/
-         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $JAVA_PARENT_PATH/ -xzf /tmp/$JAVA_DIST_FILE_NAME; rm /tmp/$JAVA_DIST_FILE_NAME"
-      done
-      echo "   Java installation complete."
+PRIVATE_KEY_FILE_NAME=$(basename $VM_PRIVATE_KEY_FILE)
+REMOTE_VM_KEY=$VM_GEODE_ADDON_WORKSPACE/$PRIVATE_KEY_FILE_NAME
+
+#
+# Installs the product defined by the following variables
+#
+# @required PRODUCT
+# @required PRODUCT_HOME_NOT_FOUND_LIST
+# @required PRODUCT_PATH
+# @required VM_PRODUCT_HOME
+#
+function installProduct
+{
+   if [ "$PRODUCT_HOME_NOT_FOUND_LIST" == "" ]; then
+      echo "$PRODUCT already installed on all VMs."
    else
-      echo "   Java already installed on all VMs."
+
+      if [ ! -f "$PRODUCT_PATH" ]; then
+         echo >&2 "ERROR: Invalid path [$PRODUCT_PATH]."
+         echo >&2 "       Command aborted."
+         exit 1
+      fi
+
+      echo "$PRODUCT installation"
+
+      local __PRODUCT_DIST_FILE_NAME=$(basename $PRODUCT_PATH)
+      local __PRODUCT_PARENT_PATH="$(dirname "$VM_PRODUCT_HOME")"
+      local __PRODUCT_COMMAND="if [ -f "/tmp/$__PRODUCT_DIST_FILE_NAME" ]; then echo true; else echo false; fi"
+
+      # Determine the first VM that has product distribution file
+      BASE_VM=""
+      for VM_HOST in $__VM_HOSTS; do
+         __PRODUCT_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$__PRODUCT_COMMAND")
+         if [ "$__PRODUCT_EXISTS" == "true" ]; then
+            BASE_VM=$VM_HOST
+	    break
+         fi
+      done
+
+      if [ "$BASE_VM" == "" ]; then
+         for VM_HOST in $PRODUCT_HOME_NOT_FOUND_LIST; do
+            echo "   Installing $VM_HOST..."
+            BASE_VM=$VM_HOST
+            break
+         done
+	 # Upload to the base VM
+         scp -q -r $VM_KEY $PRODUCT_PATH $VM_USER@$BASE_VM:/tmp/
+      fi
+
+      for VM_HOST in $PRODUCT_HOME_NOT_FOUND_LIST; do
+         if [ "$VM_HOST" != "$BASE_VM" ]; then
+            echo "   Installing $VM_HOST..."
+            # Copy from the base VM
+            ssh -q -n $VM_KEY $VM_USER@$BASE_VM -o stricthostkeychecking=no "scp -o stricthostkeychecking=no -i $REMOTE_VM_KEY /tmp/$__PRODUCT_DIST_FILE_NAME $VM_USER@$VM_HOST:/tmp/"
+         fi
+	 # Install
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $__PRODUCT_PARENT_PATH/ -xzf /tmp/$__PRODUCT_DIST_FILE_NAME"
+
+	 # Remove
+         #ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm /tmp/$__PRODUCT_DIST_FILE_NAME"
+      done
+
+      echo "$PRODUCT installation complete."
    fi
    echo ""
+}
+
+# Install Java
+if [ "$JAVA_HOME_ARG" != "" ]; then
+   
+   # Arguments to installProduct function
+   PRODUCT="Java"
+   PRODUCT_HOME_NOT_FOUND_LIST=$JAVA_HOME_NOT_FOUND_LIST
+   PRODUCT_PATH=$JAVA_HOME_ARG
+   VM_PRODUCT_HOME=$VM_JAVA_HOME
+   
+   installProduct
 fi
 
 # Install Geode
 if [ "$GEODE_ARG" != "" ]; then
-   if [ ! -f "$GEODE_ARG" ]; then
-      echo >&2 "ERROR: Invalid path [$GEODE_ARG]."
-      echo >&2 "       Command aborted."
-      exit 1
-   fi
-   GEODE_DIST_FILE_NAME=$(basename $GEODE_ARG)
-   GEODE_PARENT_PATH="$(dirname "$VM_GEODE_HOME")"
-   echo "$GEODE_DIST_FILE_NAME"
-   if [ "$GEODE_HOME_NOT_FOUND_LIST" != "" ]; then
-      for VM_HOST in $GEODE_HOME_NOT_FOUND_LIST; do
-         echo "   Installing $VM_HOST..."
-         scp -q -r $VM_KEY $GEODE_ARG $VM_USER@$VM_HOST:/tmp/
-         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $GEODE_PARENT_PATH/ -xzf /tmp/$GEODE_DIST_FILE_NAME; rm /tmp/$GEODE_DIST_FILE_NAME"
-      done
-      echo "   Geode installation complete."
-   else
-      echo "   Geode already installed on all VMs."
-   fi
+   # Arguments to installProduct function
+   PRODUCT="Goede"
+   PRODUCT_HOME_NOT_FOUND_LIST=$GEODE_HOME_NOT_FOUND_LIST
+   PRODUCT_PATH=$GEODE_ARG
+   VM_PRODUCT_HOME=$VM_GEODE_HOME
+   
+   installProduct
 fi
 
-echo ""
 echo "Run 'vm_test' to check installation and configuration status."
 echo ""

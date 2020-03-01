@@ -316,6 +316,10 @@ function writeCluster()
    echo "# Enable/disable VM cluster" >> $ETC_DIR/cluster.properties
    echo "vm.enabled=$VM_ENABLED" >> $ETC_DIR/cluster.properties
    echo "# A comma separated list of host names or addresses. IMPORANT: No spaces allowed." >> $ETC_DIR/cluster.properties
+
+   # Replace all spaces from host lists
+   VM_LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/ //g")
+   VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/ //g")
    echo "vm.locator.hosts=$VM_LOCATOR_HOSTS" >> $ETC_DIR/cluster.properties
    echo "vm.hosts=$VM_HOSTS" >> $ETC_DIR/cluster.properties
    echo "# SSH user name. If not specified then defaults to the shell login session user name." >> $ETC_DIR/cluster.properties
@@ -333,14 +337,14 @@ function writeCluster()
       echo "# Individual VM locator settings: vm.<locator-host>.*" >> $ETC_DIR/cluster.properties
       __VM_LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/,/ /g")
       for VM_HOST in $__VM_LOCATOR_HOSTS; do
-         echo "vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
+         echo "#vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
          echo "vm.${VM_HOST}.hostnameForClients=${VM_HOST}" >> $ETC_DIR/cluster.properties
       done
       echo "" >> $ETC_DIR/cluster.properties
       echo "# Individual VM member settings: vm.<member-host>.*" >> $ETC_DIR/cluster.properties
       __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
       for VM_HOST in $__VM_HOSTS; do
-         echo "vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
+         echo "#vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
          echo "vm.${VM_HOST}.hostnameForClients=${VM_HOST}" >> $ETC_DIR/cluster.properties
       done
    fi
