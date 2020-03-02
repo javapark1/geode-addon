@@ -437,10 +437,5 @@ remove_workspace -workspace ws-vm
 
 ## References
 
-<<<<<<< HEAD
 1. [Workspaces on AWS EC2 Instances](Workspaces on AWS EC2 Instances.md)
 2. [Reactivating  Workspaces on AWS EC2](Reactivating  Workspaces on AWS EC2.md)
-=======
-1. Workspaces on AWS EC2 Instances(Workspaces on AWS EC2 Instances.md)
-2. Reactivating  Workspaces on AWS EC2(Reactivating  Workspaces on AWS EC2.md)
->>>>>>> refs/remotes/origin/master
