@@ -375,7 +375,7 @@ show_cluster
 
 ## View Log
 
-To view log
+To view logs
 
 ```console
 # ubuntu1
@@ -386,6 +386,8 @@ show_log -num 2
 ```
 
 ## Stop/Kill Cluster
+
+To stop or kill the cluster:
 
 ```console
 stop_cluster
@@ -416,10 +418,10 @@ start_cluster
 
 ## Tear Down
 
-If you want to remove the cluster from all the VMs, then you must first stop the cluster and execute the `remove_cluster` command. The workspace can be removed using the `vm_exec -all` command. 
+If you want to remove the cluster from all the VMs, then you must first stop the cluster and execute the `remove_cluster` command. The workspace can be removed using the `remove_workspace` command. 
 
 ```console
-# Stop cluster and management center
+# Stop cluster including members and locators
 stop_cluster -all
 
 # Remove cluster. Unlike other commands, this command requires the '-cluster' option.
@@ -432,3 +434,8 @@ remove_workspace -workspace ws-vm -simulate
 # Remove workspace from all VMs. Runs in interactive mode.
 remove_workspace -workspace ws-vm
 ```
+
+## References
+
+1. [Workspaces on AWS EC2 Instances](Workspaces on AWS EC2 Instances.md)
+2. [Reactivating  Workspaces on AWS EC2](Reactivating  Workspaces on AWS EC2.md)

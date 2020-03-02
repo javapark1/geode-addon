@@ -334,14 +334,7 @@ function writeCluster()
    echo "" >> $ETC_DIR/cluster.properties
 
    if [ "$VM_ENABLED" == "true" ]; then
-      echo "# Individual VM locator settings: vm.<locator-host>.*" >> $ETC_DIR/cluster.properties
-      __VM_LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/,/ /g")
-      for VM_HOST in $__VM_LOCATOR_HOSTS; do
-         echo "#vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
-         echo "vm.${VM_HOST}.hostnameForClients=${VM_HOST}" >> $ETC_DIR/cluster.properties
-      done
-      echo "" >> $ETC_DIR/cluster.properties
-      echo "# Individual VM member settings: vm.<member-host>.*" >> $ETC_DIR/cluster.properties
+      echo "# Individual VM host settings: vm.<host>.*" >> $ETC_DIR/cluster.properties
       __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
       for VM_HOST in $__VM_HOSTS; do
          echo "#vm.${VM_HOST}.bindAddress=${VM_HOST}" >> $ETC_DIR/cluster.properties
