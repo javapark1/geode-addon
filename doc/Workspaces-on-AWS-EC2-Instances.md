@@ -100,18 +100,16 @@ Make sure to remove the locator IP addresses from the member host list set by th
 vm.hosts=18.191.168.36,3.135.186.150,18.218.40.90,18.217.250.90
 ```
 
-Lastly, set the redundancy zone for each of the VM. We can use any name as long as they are unique per zone. For our example, let's use the same availability zone names.
+Lastly, set the redundancy zone for each of the member VMs. We can use any name as long as they are unique per zone. For our example, let's use the availability zone names.
 
 ```bash
-vm.3.135.221.186.redundancyZone=us-east-2a
 vm.18.191.168.36.redundancyZone=us-east-2a
 vm.3.135.186.150.redundancyZone=us-east-2a
-vm.3.135.232.83.redundancyZone=us-east-2b
 vm.18.218.40.90.redundancyZone=us-east-2b
 vm.18.217.250.90.redundancyZone=us-east-2b
 ```
 
-Note that we didn't need to set the redundancy zone for locators since they are not data nodes.
+Note that we did not set the redundancy zone for locators since they are not data nodes.
 
 ## Sync VMs
 
