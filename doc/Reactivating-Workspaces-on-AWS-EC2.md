@@ -4,35 +4,20 @@ This article describes how to reactivate VM workspaces that have been detached f
 
 ## Scenario
 
-You have created a VM workspace with EC2 instances. After you were done running Geode/GemFire cluster(s) on the EC2 instances from the VM workspace, you terminated the EC2 instances without removing the workspace. 
+You have created a VM workspace with EC2 instances. After you were done running Geode/GemFire cluster(s) on the EC2 instances from the VM workspace, you terminated the EC2 instances. 
 
 A few days later, you return to your work and are in need of reinstating the same workspace environment with new EC2 instances.
 
 ## VM Workspace Activation Steps
 
-VM workspace activation steps involve updating two (2) workspace and cluster configuration files with the public IP addresses of new EC2 instances.
+VM workspace activation steps involve updating two (2) workspace and cluster configuration files with the public IP addresses of  new EC2 instances.
 
 - Workspace: `setenv.sh`
 - Cluster: `cluster.properties`
 
-Let's walk through the workspace reactivation steps using the same example workspace described in the following article:
-
-[Workspaces on AWS EC2 Instances](Workspaces-on-AWS-EC2-Instances.md)
-
 ### 1. Launch EC2 Instances
 
-First, launch the desired number of EC2 instances from the EC2 Dashboard. For our example, we launched six (6) instances as shown below.
-
-
-| Name       | IP Address    | Availability Zone |
-| ---------- | ------------- | ----------------- |
-| locator1   | 3.15.231.153  | us-east-2a        |
-| member1    | 3.136.19.139  | us-east-2a        |
-| member2    | 3.137.41.211  | us-east-2a        |
-| locator2   | 3.16.188.49   | us-east-2b        |
-| member3    | 18.225.36.155 | us-east-2b        |
-| member4    | 3.17.142.94   | us-east-2b        |
-
+First, launch the desired number of EC2 instances from the EC2 Dashboard. For our example, we launched four (4) instances.
 
 ### 2. Update Workspace `setenv.sh`
 
@@ -46,7 +31,7 @@ vi setenv.sh
 Set the `VM_HOSTS` property with the public IP addresses and make sure `VM_USER` is set to the correct user name.
 
 ```bash
-VM_HOSTS="3.15.231.153,3.136.19.139,3.137.41.211,3.16.188.49,18.225.36.155,3.17.142.94"
+VM_HOSTS="3.134.79.6,18.219.86.104,18.224.214.212,18.222.146.161"
 VM_USER="ec2-user"
 ```
 
@@ -62,27 +47,15 @@ vi etc/cluster.properties
 Set the following VM properties. 
 
 ```bash
-# Set locator and member host lists
-vm.locator.hosts=3.15.231.153,3.16.188.49
-vm.hosts=3.136.19.139,3.137.41.211,18.225.36.155,3.17.142.94
+vm.locator.hosts=3.134.79.6
+vm.locator.hosts=18.219.86.104,18.224.214.212,18.222.146.161
 vm.user=ec2-user
 
-# Set hostnameForClients and redundancyZone for each IP address
-# us-east-2a
-vm.3.15.231.153.hostnameForClients=3.15.231.153
-vm.3.15.231.153.redundancyZone=us-east-2a
-vm.3.136.19.139.hostnameForClients=3.136.19.139
-vm.3.136.19.139.redundancyZone=us-east-2a
-vm.3.137.41.211.hostnameForClients=3.137.41.211
-vm.3.137.41.211.redundancyZone=us-east-2a
-
-# us-east-2b
-vm.3.16.188.49.hostnameForClients=3.16.188.49
-vm.3.16.188.49.redundancyZone=us-east-2b
-vm.18.225.36.155.hostnameForClients=18.225.36.155
-vm.18.225.36.155.redundancyZone=us-east-2b
-vm.3.17.142.94.hostnameForClients=3.17.142.94
-vm.3.17.142.94.redundancyZone=us-east-2b
+# Set hostnameForClients for each IP address
+vm.3.134.79.6.hostnameForClients=3.134.79.6
+vm.18.219.86.104.hostnameForClients=18.219.86.104
+vm.18.224.214.212.hostnameForClients=18.224.214.212
+vm.18.222.146.161.hostnameForClients=18.222.146.161
 ```
 
 It is important to set `hostnameForClients` for each host if you want to connect to the cluster from outside the EC2 environment. This is because the Geode/GemFire members are bound to the EC2 internal IP addresses. Make sure to follow the `vm.<host>.*` pattern for the property names.
@@ -100,26 +73,22 @@ vm_sync
 The above command reports the following:
 
 ```console
-Deploying geode-addon_0.9.0-SNAPSHOT to 3.15.231.153...
-Deploying geode-addon_0.9.0-SNAPSHOT to 3.136.19.139...
-Deploying geode-addon_0.9.0-SNAPSHOT to 3.137.41.211...
-Deploying geode-addon_0.9.0-SNAPSHOT to 3.16.188.49...
-Deploying geode-addon_0.9.0-SNAPSHOT to 18.225.36.155...
-Deploying geode-addon_0.9.0-SNAPSHOT to 3.17.142.94...
+Deploying geode-addon_0.9.0-SNAPSHOT to 3.134.79.6...
+Deploying geode-addon_0.9.0-SNAPSHOT to 18.219.86.104...
+Deploying geode-addon_0.9.0-SNAPSHOT to 18.224.214.212...
+Deploying geode-addon_0.9.0-SNAPSHOT to 18.222.146.161...
 
 Workspace sync: ws-aws-gemfire
-   Synchronizing 3.15.231.153...
-   Synchronizing 3.136.19.139...
-   Synchronizing 3.137.41.211...
-   Synchronizing 3.16.188.49...
-   Synchronizing 18.225.36.155...
-   Synchronizing 3.17.142.94...
+   Synchronizing 3.134.79.6...
+   Synchronizing 18.219.86.104...
+   Synchronizing 18.224.214.212...
+   Synchronizing 18.222.146.161...
 ------------------------------------------------------------------------------------------
 WARNING:
 /home/ec2-user/Geode/jdk1.8.0_212
    JDK not installed on the following VMs. The workspace will not be operational
    until you install JDK on these VMs.
-       3.15.231.153 3.136.19.139 3.137.41.211 3.16.188.49 18.225.36.155 3.17.142.94
+       3.134.79.6 18.219.86.104 18.224.214.212 18.222.146.161
 VM Java Home Path:
       /home/ec2-user/Geode/jdk1.8.0_212
 To install Java on the above VMs, download the correct version of JDK and execute 'vm_install'.
@@ -130,14 +99,13 @@ Example:
 WARNING:
    Geode is not installed on the following VMs. The workspace will not be operational
    until you install Geode on these VMs.
-       3.15.231.153 3.136.19.139 3.137.41.211 3.16.188.49 18.225.36.155 3.17.142.94
+       3.134.79.6 18.219.86.104 18.224.214.212 18.222.146.161
 VM Geode Path:
     /home/ec2-user/Geode/pivotal-gemfire-9.9.1
 To install Geode on the above VMs, download the correct version of JDK and execute 'vm_install'.
 Example:
    vm_install -geode pivotal-gemfire-9.9.1.tar.gz
 ------------------------------------------------------------------------------------------
-Workspace sync complete.
 ```
 
 ### 5. Install Software
@@ -157,32 +125,6 @@ Start the cluster.
 start_cluster
 ```
 
-## 7. Run Apps
-
-For our example, we have the `perf_test` app already created. Edit the `client-cache.xml` file as before.
-
-```console
-create_app
-cd_app perf_test
-vi etc/client-cache.xml
-```
-
-Replace the old locator IP addresses with the new locator IP addresses.
-
-```xml
-<pool name="serverPool">
-   <locator host="3.15.231.153" port="10334" />
-   <locator host="3.16.188.49" port="10334" />
-</pool>
-````
-
-Ingest data into the cluster.
-
-```console
-cd bin_sh
-./test_ingestion -run
-```
-
 ## Summary
 
-Reactivating a VM workspace with new EC2 instances requires a simple step of updating the workspace and cluster configuration files with the new instance IP addresses.
+Reactivating a VM workspace on EC2 instances requires a simple step of updating the workspace and cluster configuration files with the new public IP addresses.
