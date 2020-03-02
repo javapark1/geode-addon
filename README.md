@@ -95,7 +95,11 @@ The `geode-addon` distribution includes the following components:
 3. [Vagrant Pods](geode-addon-deployment/src/main/resources/pods/)
 4. [VMs (AWS, Azure, GCP, etc)](doc/VMs.md)
    1. [Workspaces on AWS EC2 Instances](doc/Workspaces on AWS EC2 Instances.md)
+<<<<<<< HEAD
    2. [Reactivating Workspaces on AWS EC2](doc/Reactivating  Workspaces on AWS EC2.md)
+=======
+   2. [Reactivating Workspaces on AWS EC2)[Reactivating  Workspaces on AWS EC2.md)
+>>>>>>> refs/remotes/origin/master
 5. [Kubernetes](geode-addon-deployment/src/main/resources/k8s/kustom)
 6. [Docker](geode-addon-deployment/src/main/resources/docker/compose)
 7. [Apps](geode-addon-deployment/src/main/resources/apps/)
