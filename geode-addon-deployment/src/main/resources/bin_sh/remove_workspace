@@ -245,9 +245,9 @@ if [ "$VM_ENABLED" == "true" ] && [ "$LOCAL" != "true" ]; then
       fi
    done
 fi
-echo rm -r $WORKSPACE_DIR
+echo rm -rf $WORKSPACE_DIR
 if [ "$SIMULATE" != "true" ]; then
-   rm -r $WORKSPACE_DIR
+   rm -rf $WORKSPACE_DIR
 fi
 
 # Display summary

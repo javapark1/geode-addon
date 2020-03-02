@@ -89,8 +89,21 @@ if [ "$VM_ENABLED" == "true" ]; then
    if [ "$VM_KEY" != "" ]; then 
       VM_KEY="-i $VM_KEY"
    fi
+
+   # Locator count
+   LOCATOR_COUNT=0
    for VM_HOST in $__LOCATOR_HOSTS; do
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE"
+      let LOCATOR_COUNT=LOCATOR_COUNT+1
+   done
+
+   COUNT=0
+   for VM_HOST in $__LOCATOR_HOSTS; do
+      let COUNT=COUNT+1
+      if [ $COUNT -lt $LOCATOR_COUNT ]; then
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE" &
+      else
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$COMMAND_PREFIX $VM_GEODE_ADDON_HOME/bin_sh/start_locator -cluster $CLUSTER -vm VM_LOCATOR_HOSTS  $* -remote $VM_HOST -workspace $VM_GEODE_ADDON_WORKSPACE"
+      fi
    done
 
    # Replace , with space
@@ -144,13 +157,23 @@ fi
 
 # Start locators
 pushd $RUN_DIR > /dev/null 2>&1
+# Locator count
+let LOCATOR_COUNT=0
+for VM_HOST in $__LOCATOR_HOSTS; do
+   let LOCATOR_COUNT=LOCATOR_COUNT+1
+done
+
 COUNT=0
 for i in ${LOCATOR_PREFIX}*; do
    if [ -d "$i" ]; then
       let COUNT=COUNT+1
       pushd $i > /dev/null 2>&1
       LOCATOR_NUMBER=${i:$LOCATOR_PREFIX_LEN}
-      start_locator -cluster $CLUSTER -num $LOCATOR_NUMBER
+      if [ $COUNT -lt $LOCATOR_COUNT ]; then
+         start_locator -cluster $CLUSTER -num $LOCATOR_NUMBER &
+      else
+         start_locator -cluster $CLUSTER -num $LOCATOR_NUMBER
+      fi
       popd > /dev/null 2>&1
    fi
    if [ "$POD" != "local" ]; then

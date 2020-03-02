@@ -231,6 +231,9 @@ let MEMBER_HTTP_PORT=MEMBER_HTTP_START_PORT+MEMBER_NUMBER-1
 LOCATOR_TCP_LIST=""
 MEMBER_TCP_LIST=""
 VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+BIND_ADDRESS=""
+HOSTNAME_FOR_CLIENTS=""
+REDUNDANCY_ZONE=""
 if [ "$VM_ENABLED" == "true" ]; then
 
    VM_LOCATOR_HOSTS=$(getClusterProperty "vm.locator.hosts")
@@ -267,6 +270,7 @@ if [ "$VM_ENABLED" == "true" ]; then
    VM_HOST=$REMOTE
    BIND_ADDRESS=`getClusterProperty "vm.${VM_HOST}.bindAddress"`
    HOSTNAME_FOR_CLIENTS=`getClusterProperty "vm.${VM_HOST}.hostnameForClients"`
+   REDUNDANCY_ZONE=`getClusterProperty "vm.${VM_HOST}.redundancyZone"`
 
 elif [ "$POD" == "local" ]; then
 
@@ -464,6 +468,10 @@ JAVA_OPTS="$JAVA_OPTS \
       --J=-Dgemfire.PREFER_SERIALIZED=true \
       --J=-Dgemfire.BucketRegion.alwaysFireLocalListeners=false \
       --J=-Dgeode-addon.server.port=$MEMBER_PORT"
+
+if [ "$REDUNDANCY_ZONE" != "" ]; then
+   JAVA_OPTS="$JAVA_OPTS --J=-Dgemfire.redundancy-zone=$REDUNDANCY_ZONE"
+fi
 
 # Start the member
 if [[ ${OS_NAME} == CYGWIN* ]]; then
