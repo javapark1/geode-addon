@@ -217,7 +217,7 @@ stop_cluster
 
 If you terminate the EC2 instances without removing the workspace, then your workspace will be preserved on your local machine. This means you can later reactivate the workspace by simply launching new EC2 instances and configuring the workspace with the new public IP addresses. The following link provides step-by-step instructions describing how to reactivate VM workspaces.
 
-[Reactivating  Workspaces on AWS EC2](Reactivating  Workspaces on AWS EC2.md)
+[Reactivating Workspaces on AWS EC2](Reactivating-Workspaces-on-AWS-EC2.md)
 
 ## Tear Down
 
