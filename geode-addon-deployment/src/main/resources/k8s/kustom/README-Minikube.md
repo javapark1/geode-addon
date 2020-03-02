@@ -352,7 +352,7 @@ kubectl delete -k geode/overlay-base/
 kubectl delete -k geode/storage/minikube/
 
 # Delete the minikube VM.
-minikube deleted
+minikube delete
 ```
 
 ## Tips
