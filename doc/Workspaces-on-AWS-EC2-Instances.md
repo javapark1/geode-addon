@@ -1,6 +1,6 @@
 # Workspaces on AWS EC2 Instances
 
-This article provides a step-by-step guide to creating and running a VM workspace on AWS EC2 instances.
+This article provides step-by-step instructions for creating and running a VM workspace on AWS EC2 instances.
 
 ## Launch EC2 Instances
 
@@ -51,19 +51,19 @@ The non-vm options, `-java` and `-geode` must be set to Java and Geode home path
 
 The following table shows the breakdown of the options.
 
-| Option         | Value                                                    | Description    |
-|--------------- | -------------------------------------------------------- | -------------- |
-| -name          | ws-aws-geode                                             | Workspace name |
-| -cluster       | mygeode                                                  | Cluster name |
-| -java          | /home/dpark/Work/linux/jdk1.8.0_212                      | JAVA_HOME, local file system |
-| -geode         | /home/dpark/Work/linux/apache-geode-1.11.0               | GEODE_HOME, local file system |
+| Option         | Value                                                    | Description                     |
+|--------------- | -------------------------------------------------------- | ------------------------------- |
+| -name          | ws-aws-geode                                             | Workspace name                  |
+| -cluster       | mygeode                                                  | Cluster name                    |
+| -java          | /home/dpark/Work/linux/jdk1.8.0_212                      | JAVA_HOME, local file system    |
+| -geode         | /home/dpark/Work/linux/apache-geode-1.11.0               | GEODE_HOME, local file system   |
 | -vm            | 3.134.79.6,18.219.86.104,18.224.214.212,18.222.146.161 | EC2 instance public IP addresses. Must be separated by command with no spaces |
-| -vm-java       | /home/ec2-user/Geode/jdk1.8.0_212                        | JAVA_HOME, EC2 instance |
-| -vm-geode      | /home/ec2-user/Geode/pivotal-gemfire-9.9.1               | GEODE_HOME, EC2 instance |
-| -vm-addon      | /home/ec2-user/Geode/geode-addon_0.9.0-SNAPSHOT          | GEODE_ADDON_HOME, EC2 instance |
-| -vm-workspaces | /home/dpark/Geode/workspaces                             | GEODE_ADDON_WORKSPACES_HOME, EC2 instance |
-| -vm-user       | ec2-user                                                 | User name, EC2 instance |
-| -vm-key        | /home/dpark/Work/aws/ecs.pem                             | Private key file, EC2 instance |
+| -vm-java       | /home/ec2-user/Geode/jdk1.8.0_212                        | JAVA_HOME, EC2 instances        |
+| -vm-geode      | /home/ec2-user/Geode/pivotal-gemfire-9.9.1               | GEODE_HOME, EC2 instances       |
+| -vm-addon      | /home/ec2-user/Geode/geode-addon_0.9.0-SNAPSHOT          | GEODE_ADDON_HOME, EC2 instances |
+| -vm-workspaces | /home/dpark/Geode/workspaces                             | GEODE_ADDON_WORKSPACES_HOME, EC2 instances |
+| -vm-user       | ec2-user                                                 | User name, EC2 instances        |
+| -vm-key        | /home/dpark/Work/aws/ecs.pem                             | Private key file, EC2 instances |
 
 
 ## Configure Cluster
@@ -79,6 +79,7 @@ vi etc/cluster.properties
 Change the heap and host properties in that file as follows:
 
 ```bash
+# Lower the heap size from 1g to 512m
 heap.min=512m
 heap.max=512m
 
@@ -180,7 +181,7 @@ http://3.134.79.6:7070/pulse(http://3.134.79.6:7070/pulse)
 
 ## Test Cluster
 
-You can run the `perf_test` app to ingest data into the cluster and monitor it using Pulse.
+You can run the `perf_test` app to ingest data into the cluster and monitor the region sizes increase from Pulse.
 
 First, create the `perf_test` app and edit its configuration file to point to the locator running on EC2.
 
@@ -205,14 +206,6 @@ cd bin_sh
 ./test_ingestion -run
 ```
 
-## Stop Cluster
-
-To stop the cluster:
-
-```console
-stop_cluster
-```
-
 ## Preserve Workspace
 
 If you terminate the EC2 instances without removing the workspace, then your workspace will be preserved on your local machine. This means you can later reactivate the workspace by simply launching new EC2 instances and configuring the workspace with the new public IP addresses. The following link provides step-by-step instructions describing how to reactivate VM workspaces.
@@ -223,7 +216,7 @@ If you terminate the EC2 instances without removing the workspace, then your wor
 
 1. Stop the cluster
 
-If you want to remove the cluster from all the VMs, then you must first stop the cluster and execute the `remove_cluster` command. The workspace can be removed using the `remove_workspace` command. 
+If you want to remove the cluster from all the VMs, then you must first stop the cluster and execute the `remove_cluster` command.
 
 ```console
 # Stop cluster including members and locator
@@ -232,7 +225,7 @@ stop_cluster -all
 
 2. Remove the workspace
 
-If you want to preserve the workspace so that you can later reactivate it then skip this step and jump to the next step.
+If you want to preserve the workspace so that you can later reactivate it then skip this step and jump to the next step; othereise, run the `remove_workspace` command which will also remove the cluster.
 
 ```console
 # Simulate removing workspace from all VMs. Displays removal steps but does not
