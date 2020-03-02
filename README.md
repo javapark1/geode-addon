@@ -116,7 +116,7 @@ The following is a list of examples provided to help you get familiar with `geod
 
 ## Building geode-addon
 
-If you want to generate man pages then execute `build_dist`.sh. This is the recommended way to build the `geode-addon` distribution.
+If you want to generate man pages then execute **`build_dist.sh`**. This is the recommended way to build the `geode-addon` distribution.
 
 ```console
 chmod 755 build_dish.sh
@@ -290,18 +290,19 @@ This hidden file sets the `GEODE_ADDON_WORKSPACE` environment variable to the wo
 
 ```console
 geode_addon <tab><tab>
--version            create_app          kill_member         remove_node         start_pod
-add_locator         create_bundle       kill_workspace      remove_pod          stop_cluster
-add_member          create_cluster      list_apps           show_bundle         stop_locator
-add_node            create_docker       list_clusters       show_cluster        stop_member
-build_pod           create_k8s          list_pods           show_log            stop_pod
-cd_app              create_pod          list_workspaces     show_pod            stop_workspace
-cd_cluster          create_script       pwd_cluster         show_workspace      switch_cluster
-cd_docker           create_workspace    pwd_workspace       shutdown_cluster    switch_workspace
-cd_k8s              init_geode_addon    remove_app          shutdown_workspace  vm_copy
-cd_pod              install_bundle      remove_cluster      start_cluster       vm_deploy_bundle
-cd_workspace        kill_cluster        remove_locator      start_locator       vm_exec
-clean_cluster       kill_locator        remove_member       start_member
+-version            create_bundle       list_apps           show_bundle         stop_member
+add_locator         create_cluster      list_clusters       show_cluster        stop_pod
+add_member          create_docker       list_pods           show_log            stop_workspace
+add_node            create_k8s          list_workspaces     show_pod            switch_cluster
+build_pod           create_pod          pwd_cluster         show_workspace      switch_workspace
+cd_app              create_script       pwd_workspace       shutdown_cluster    vm_copy
+cd_cluster          create_workspace    remove_app          shutdown_workspace  vm_deploy_addon
+cd_docker           init_geode_addon    remove_cluster      start_cluster       vm_deploy_bundle
+cd_k8s              install_bundle      remove_locator      start_locator       vm_download
+cd_pod              kill_cluster        remove_member       start_member        vm_exec
+cd_workspace        kill_locator        remove_node         start_pod           vm_install
+clean_cluster       kill_member         remove_pod          stop_cluster        vm_sync
+create_app          kill_workspace      remove_workspace    stop_locator        vm_test
 ```
 
 :exclamation: There is a well-known bash auto-completion bug in macOS that prepends a backslash if you hit the tab key followed by an environment variable. If this happens to you then a workaround is to add the following command in `.bashrc` or `.bash_profile`. *Note that this is a macOS bash bug and is NOT contributed by `geode-addon`.*
