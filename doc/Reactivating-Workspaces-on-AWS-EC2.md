@@ -10,11 +10,10 @@ A few days later, you return to your work and are in need of reinstating the sam
 
 ## VM Workspace Activation Steps
 
-VM workspace activation steps involve updating two (2) files with the public IP addresses of  new EC2 instances.
+VM workspace activation steps involve updating two (2) workspace and cluster configuration files with the public IP addresses of  new EC2 instances.
 
-- Workspace `setenv.sh`
-- `etc/cluster.properties`
-
+- Workspace: `setenv.sh`
+- Cluster: `cluster.properties`
 
 ### 1. Launch EC2 Instances
 
@@ -128,4 +127,4 @@ start_cluster
 
 ## Summary
 
-Reactivating a VM workspace on EC2 instances requires updating the workspace and cluster configuration files with the new public IP addresses.
+Reactivating a VM workspace on EC2 instances requires a simple step of updating the workspace and cluster configuration files with the new public IP addresses.
