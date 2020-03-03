@@ -6,7 +6,7 @@ A complementary bundle that has WAN clusters preconfigured and ready to be run i
 
 ```console
 # To see instructions
-show_bundle -download bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan.tar.gz
+show_bundle bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan.tar.gz
 
 # To install bundle
 install_bundle -download bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan.tar.gz
