@@ -109,6 +109,7 @@ The following is a list of examples provided to help you get familiar with `geod
 
 - [Quick Start](#Quick-Start) - Quick-start `geode-addon` installation and data ingestion instructions.
 - [Database Integration](geode-addon-deployment/src/main/resources/apps/perf_test#mapstorepkdbimpl-database-integration) - A generic DB addon that connects to any database via Hibernate.
+- [WAN Example](doc/WAN-Example.md) - A WAN example that replicates transactional data between clusters.
 
 ## Supported Geode/GemFire Versions
 
