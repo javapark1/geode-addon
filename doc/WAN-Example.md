@@ -4,13 +4,15 @@ This article describes a complete set of steps for creating a WAN environment. W
 
 The steps we'll take are typical steps that you would take when preparing `geode-addon` for your local environment.
 
-0. [Install `geode-addon`](/#building-geode-addon)
+0. [Install `geode-addon`](/geode-addon/README.md#building-geode-addon)
 1. [Create Workspace](#1-Create-Workspace)
 2. [Create Clusters](#2-Create-Clusters)
 3. [Update Configuration Files](#3-Update-Configuration-Files)
 4. [Start Clusters](#4-Start-Clusters)
 5. [Monitor Clusters](#5-Monitor-Clusters)
 6. [Ingest Data](#6-Ingest-Data)
+7. [Tear Down](#6-Tear-Down)
+8. [Summary](#Summary)
 
 ## 1. Create Workspace
 
