@@ -1,6 +1,16 @@
 # WAN Example
 
-This article describes a complete set of steps for creating a WAN environment. We'll create two (2) Hazelcast clusters named **`ny`** and **`ln`** running on `localhost`. We'll then configure the `ny` cluster to replicate transactional data to the `ln` cluster and run the `perf_test` apps to generate transactional data.
+This article describes a complete set of steps for creating a local WAN environment. We'll create two (2) Hazelcast clusters named **`ny`** and **`ln`** running on `localhost`. We'll then configure the `ny` cluster to replicate transactional data to the `ln` cluster and run the `perf_test` apps to generate transactional data.
+
+A complementary bundle that has WAN clusters preconfigured and ready to be run is available in the [geode-addon-bundles](https://github.com/javapark1/geode-addon-bundles/tree/master/help/bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan) repo. If you want to skip this article and just install and run the bundle, then you can install the bundle as follows.
+
+```console
+# To see instructions
+show_bundle -download bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan.tar.gz
+
+# To install bundle
+install_bundle -download bundle-geode-1.11.0-cluster-app-ln-ny-perf_test_wan.tar.gz
+```
 
 The steps we'll take are typical steps that you would take when preparing `geode-addon` for your local environment.
 
