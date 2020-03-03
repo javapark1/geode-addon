@@ -80,11 +80,6 @@ DEFAULT_WORKSPACE=myws
 DEFAULT_CLUSTER="mygeode"
 
 #
-# Default Geode distributed system ID
-#
-DEFAULT_DISTRIBUTED_SYSTEM_ID=-1
-
-#
 # Default pod type. The pod type determines the node envirionment in which
 # the cluster is formed. The supported types are as follows:
 #

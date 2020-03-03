@@ -87,7 +87,6 @@ function displayVmClusterShort()
    
    echo "       WORKSPACE: $GEODE_ADDON_WORKSPACE"
    echo "         CLUSTER: $CLUSTER"
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
    echo "      Deployment: VM"
    if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
@@ -148,7 +147,6 @@ function displayVmClusterLong()
    else
       echo "         CLUSTER: $CLUSTER"
    fi
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    echo "      Deployment: VM"
    echo ""
 
@@ -269,7 +267,6 @@ function displayVmClusterLong()
    done
 
    echo "         CLUSTER: $CLUSTER"
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
    echo -e "Locators Running: ${CLightGreen}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    else
@@ -352,7 +349,6 @@ function displayClusterShort()
    fi
    echo "       WORKSPACE: $GEODE_ADDON_WORKSPACE"
    echo "         CLUSTER: $CLUSTER"
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
    echo "             POD: $POD"
    echo "        POD_TYPE: $POD_TYPE"
@@ -426,7 +422,6 @@ function displayClusterLong()
    else
       echo "         CLUSTER: $CLUSTER"
    fi
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
    echo "             POD: $POD"
    echo "        POD_TYPE: $POD_TYPE"
@@ -648,7 +643,6 @@ function displayClusterLong()
 
    # Summary
    echo "         CLUSTER: $CLUSTER"
-   echo "      CLUSTER_ID: $DISTRIBUTED_SYSTEM_ID"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
    echo "   Locator Count: $LOCATOR_COUNT"
    if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
@@ -666,11 +660,6 @@ function displayClusterLong()
 
 # Get workspace name
 WORKSPACE=${GEODE_ADDON_WORKSPACE##*/}
-
-#
-# Distributed system ID
-#
-DISTRIBUTED_SYSTEM_ID=`getClusterProperty "cluster.id" "$DEFAULT_DISTRIBUTED_SYSTEM_ID"`
 
 # 
 # VM cluster

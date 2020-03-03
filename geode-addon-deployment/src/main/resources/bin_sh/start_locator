@@ -82,11 +82,6 @@ else
 fi
 
 #
-# Distributed system ID
-#
-DISTRIBUTED_SYSTEM_ID=`getClusterProperty "cluster.id" "$DEFAULT_DISTRIBUTED_SYSTEM_ID"`
-
-#
 # VM cluster
 #
 if [ "$REMOTE_SPECIFIED" == "false" ]; then
@@ -364,8 +359,7 @@ if [[ ${OS_NAME} == CYGWIN* ]]; then
 fi
 export LOG_DIR=$__LOG_DIR
 
-GEMFIRE_PROPERTIES="--J=-Dgemfire.distributed-system-id=$DISTRIBUTED_SYSTEM_ID \
-   --J=-Dgemfire.jmx-manager=true \
+GEMFIRE_PROPERTIES="--J=-Dgemfire.jmx-manager=true \
    --J=-Dgemfire.jmx-manager-port=$JMX_MANAGER_PORT \
    --J=-Dgemfire.jmx-manager-http-port=$JMX_MANAGER_HTTP_PORT"
 JAVA_OPTS="$JAVA_OPTS $GEMFIRE_PROPERTIES"

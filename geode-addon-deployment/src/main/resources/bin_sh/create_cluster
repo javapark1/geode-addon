@@ -84,7 +84,7 @@ EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
-   $EXECUTABLE -cluster $CLUSTER -pod $POD -port $DEFAULT_MEMBER_START_PORT -id $DEFAULT_DISTRIBUTED_SYSTEM_ID
+   $EXECUTABLE -cluster $CLUSTER -pod $POD -port $DEFAULT_MEMBER_START_PORT
 
 EOF
 fi
@@ -123,22 +123,6 @@ if [ "`isPodExist $POD`" == "false" ]; then
    echo >&2 "    ERROR: This pod does not exist [$POD]. Command aborted."
    echo >&2 "----------------------------------------------------------------"
    exit 1
-fi
-
-#
-# Set the distributed system ID
-#
-if [ "$ID" != "" ]; then
-   if [ "$ID" != "-1" ]; then
-      if [ $ID -lt 1 ] || [ $ID -gt 255]; then
-         echo >&2 "ERROR: Invalid ID [$ID}.  Distributed system ID must be -1 or in the range of [1,255]."
-         echo >&2 "       Command aborted."
-         exit 1
-      fi
-   fi
-   DISTRIBUTED_SYSTEM_ID=$ID
-else
-   DISTRIBUTED_SYSTEM_ID=$DEFAULT_DISTRIBUTED_SYSTEM_ID
 fi
 
 function writeCluster() 
@@ -212,11 +196,6 @@ function writeCluster()
    echo "# Cluster Creation Date: `date`" >> $ETC_DIR/cluster.properties
    echo "" >> $ETC_DIR/cluster.properties
    
-   # Distributed system ID
-   echo "# Distribued system ID" >> $ETC_DIR/cluster.properties
-   echo "cluster.id=$DISTRIBUTED_SYSTEM_ID" >> $ETC_DIR/cluster.properties
-   echo "" >> $ETC_DIR/cluster.properties
-
    # Cluster name
    echo "# Cluster name" >> $ETC_DIR/cluster.properties
    echo "cluster.name=$CLUSTER" >> $ETC_DIR/cluster.properties

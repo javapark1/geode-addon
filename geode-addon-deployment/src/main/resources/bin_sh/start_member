@@ -99,11 +99,6 @@ else
 fi
 
 #
-# Distributed system ID
-#
-DISTRIBUTED_SYSTEM_ID=`getClusterProperty "cluster.id" "$DEFAULT_DISTRIBUTED_SYSTEM_ID"`
-
-#
 # VM cluster
 #
 if [ "$REMOTE_SPECIFIED" == "false" ]; then
@@ -461,7 +456,6 @@ JAVA_OPTS="$JAVA_OPTS \
       --J=-XX:CMSInitiatingOccupancyFraction=75 \
       --J=-DgemfirePropertyFile=$GEMFIRE_PROPERTY_FILE \
       --J=-Dgemfire.log-file=$LOG_FILE \
-      --J=-Dgemfire.distributed-system-id=$DISTRIBUTED_SYSTEM_ID \
       --J=-DDISK_STORE_DIR=$DISK_STORE_DIR \
       --J=-DREMOTE_SYSTEM_ID_1= \
       --J=-DREMOTE_SYSTEM_ID_2= \
@@ -888,7 +882,6 @@ function writeBottomBody()
    echo "--J=-Xloggc:\$INSTANCE_NAME-gc.log \\" >> $__SCRIPT_FILE
    echo "--J=-XX:+PrintGCDetails \\" >> $__SCRIPT_FILE
    echo "--J=-XX:+PrintGCDateStamps \\" >> $__SCRIPT_FILE
-   echo "--J=-Dgemfire.distributed-system-id=$DISTRIBUTED_SYSTEM_ID \\" >> $__SCRIPT_FILE
    echo "--J=-Dgemfire.jmx-manager=true \\" >> $__SCRIPT_FILE
    echo "--J=-Dgemfire.jmx-manager-port=\$JMX_MANAGER_PORT \\" >> $__SCRIPT_FILE
    echo "--J=-Dgemfire.jmx-manager-http-port=\$JMX_MANAGER_HTTP_PORT \\" >> $__SCRIPT_FILE
