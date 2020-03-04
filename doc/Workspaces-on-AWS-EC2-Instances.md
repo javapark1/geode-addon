@@ -4,7 +4,7 @@ This article provides step-by-step instructions for creating and running a VM wo
 
 ## Launch EC2 Instances
 
-From the EC2 Dashboard launch four (6) EC2 instances of type `t2.micro` on two (2) different availability zones and collect their public IP addresses. For our example, we launched three (3) instances on each of the `us-east-2a` and `us-east-2b` availability zones, named the instances, and collected their public IP addresses as follows:
+From the EC2 Dashboard launch six (6) EC2 instances of type `t2.micro` on two (2) different availability zones and collect their public IP addresses. For our example, we launched three (3) instances on each of the `us-east-2a` and `us-east-2b` availability zones, named the instances, and collected their public IP addresses as follows:
 
 | Name       | IP Address     | Availability Zone |
 | ---------- | -------------- | ----------------- |
