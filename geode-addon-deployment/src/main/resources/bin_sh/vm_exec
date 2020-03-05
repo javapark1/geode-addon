@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -vm -all -debug -?"
+   echo "-cluster -vm -all -simulate -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -26,31 +26,38 @@ NAME
                  by default in geode-addon environment
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-all] [-debug] "<commands>" [-?]
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-all] [-simulate] "commands" [-?]
 
-   Executes the specified command in the specified VMs. By default, the VM in 
-   which this command executes is not included. To include t, specify the '-all' option.
- 
-   If the '-vm' option is not specified, then it executes the command in the
-   hosts defined by the 'vm.locator.hosts' and 'vm.hosts' properties in the
-   etc/cluster.properties file.
+   Executes the specified commands in all the workspace VMs defined by the VM_HOSTS
+   environment variable in the workspace 'setenv.sh' file. To execute only in the
+   cluster VMs, specify the cluster with the '-cluster' option. To execute in a select
+   list of VMs, specify the VM list with the '-vm' option.
+
+   The specified commands will not be executed on this VM (the VM from which $EXECUTABLE
+   is executed). To include this VM, specify the '-all' option.
+
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
 
 OPTIONS
    -cluster cluster_name
              Cluster name.
 
    -vm comma_separated_hosts
-             A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
 
    -all
              Execute the command on all VMs including this VM. If not specified
-             then the command will not executed on this VM.
+             then the command will not execute on this VM.
 
-   -debug
-             Print the remote command but do not execute.
+   -simulate
+             Print the remote commands but do not execute.
 
    "commands"
-             Remote commands separated by ';'. Commands should be in double quotes.
+             Remote commands separated by ';' or '&&'. Commands should be in double quotes.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -67,18 +74,57 @@ EOF
    exit
 fi
 
-# 
-# VM cluster
-#
-if [ "$VM_HOSTS" == "" ]; then
+# Available only on VM workspaces
+if [ "$VM_ENABLED" != "true" ]; then
    echo "----------------------------------------------------------------"
    echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   if [ "$VM_HOSTS" == "" ]; then
-      echo >&2 "    ERROR: You must specify the '-vm' option or set VM_HOSTS in the workspace"
-      echo >&2 "           'setenv.sh' file. Command aborted."
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
+fi
+
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
       exit 1
    fi
-   echo "----------------------------------------------------------------"
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
 fi
 
 #
@@ -86,13 +132,12 @@ fi
 #
 COMMAND=
 PREV_VAL=
-for i in $*
-do
+for i in $*; do
    if [[ "$i" == "${CLUSTER}" ]]; then
        if [ -z $CLUSTER_SPECIFIED ]; then
           COMMAND="$COMMAND $i"
        fi
-   elif [[ "$i" != "-cluster" ]]  && [[ "$i" != "-vm" ]]  && [[ "$i" != "-all" ]] && [[ "$i" != "-debug" ]]; then
+   elif [[ "$i" != "-cluster" ]]  && [[ "$i" != "-vm" ]]  && [[ "$i" != "-all" ]] && [[ "$i" != "-simulate" ]]; then
       if [ "$PREV_VAL" != "-vm" ]; then
          COMMAND="$COMMAND $i"
       fi
@@ -102,9 +147,13 @@ done
 
 # Replace , with space
 __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
-DEFAULT_USER=$(whoami)
-VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
-VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+   VM_USER=`getClusterProperty "vm.user"`
+   VM_KEY=`getClusterProperty "vm.privateKeyFile"`
+fi
+if [ "$VM_USER" == "" ]; then
+   VM_USER=$(whoami)
+fi
 if [ "$VM_KEY" != "" ]; then 
    VM_KEY="-i $VM_KEY"
 fi
@@ -116,10 +165,13 @@ for VM_HOST in $__VM_HOSTS; do
      fi
 
      echo "---------- $VM_HOST ----------"
-     echo
-     if [ "$DEBUG" == "true" ]; then
+     if [ "$SIMULATE" == "true" ]; then
          echo "ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND"
+     else
+        ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND
      fi
-     ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no $COMMAND
      echo ""
 done
+if [ "$SIMULATE" == "true" ]; then
+   echo "Simulation complete."
+fi

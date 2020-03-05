@@ -80,7 +80,9 @@ if [ "$WORKSPACE_ARG" == "" ]; then
 fi
 
 # Simulation runs in the quite mode
-QUIET=$SIMULATE
+if [ "$SIMULATE" == "true" ]; then
+   QUIET=$SIMULATE
+fi
 
 # Prompt if the workspace exists
 WORKSPACE_DIR="$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE_ARG"
@@ -119,7 +121,6 @@ K8S=$(getClusters "k8s" $WORKSPACE_ARG)
 # docker list
 DOCKERS=$(getClusters "docker" $WORKSPACE_ARG)
 
-
 # Display installed components
 if [ "$CLUSTERS" != "" ] || [ "$PODS" != "" ] || [ "$K8S" != "" ] || [ "$DOCKERS" != "" ] ; then
    echo ""
@@ -141,7 +142,7 @@ if [ "$CLUSTERS" != "" ] || [ "$PODS" != "" ] || [ "$K8S" != "" ] || [ "$DOCKERS
    fi
    if [ "$DOCKERS" != "" ]; then
       echo ""
-      echo "Dockers:"
+      echo "Docker:"
       showTree "$DOCKER"
    fi
    if [ "$QUIET" == "false" ]; then
@@ -239,14 +240,18 @@ if [ "$VM_ENABLED" == "true" ] && [ "$LOCAL" != "true" ]; then
       elif [ "$HOSTNAME" == "$THIS_VM_HOSTNAME" ]; then
          continue
       fi
-      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm -rf $VM_WORKSPACE_DIR"
-      if [ "$RUN" == "true" ]; then
+      echo "   Removing $VM_HOST..."
+      if [ "$SIMULATE" == "true" ]; then
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm -rf $VM_WORKSPACE_DIR"
+      else
          ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "rm -rf $VM_WORKSPACE_DIR"
       fi
    done
 fi
-echo rm -rf $WORKSPACE_DIR
-if [ "$SIMULATE" != "true" ]; then
+echo "   Removing local workspace..."
+if [ "$SIMULATE" == "true" ]; then
+   echo rm -rf $WORKSPACE_DIR
+else
    rm -rf $WORKSPACE_DIR
 fi
 
@@ -262,7 +267,6 @@ if [ "$SIMULATE" != "true" ]; then
    echo ""
    echo "A full backup of workspace has been made. To recover the workspace,"
    echo "execute the following command:"
-   echo ""
    echo -e "   ${CLightGreen}recover_workspace $WORKSPACE_ARCHIVE_FILE${CNone}"
 else
    echo "Workspace Simulated: $WORKSPACE_ARG"

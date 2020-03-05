@@ -139,8 +139,7 @@ if [ "$REMOTE_SPECIFIED" == "false" ]; then
       __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
       DEFAULT_USER=$(whoami)
       VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
-      #VM_KEY=`getClusterProperty "vm.privateKeyFile"`
-      VM_KEY=$VM_PRIVATE_KEY_FILE
+      VM_KEY=`getClusterProperty "vm.privateKeyFile"`
       if [ "$VM_KEY" != "" ]; then 
          VM_KEY="-i $VM_KEY"
       fi
@@ -188,7 +187,7 @@ fi
 
 if [ ! -d $MEMBER_DIR ]; then
    if [ "$REMOTE_SPECIFIED" == "true" ]; then
-      $SCRIPT_DIR/add_member -cluster $CLUSTER -workspace $GEODE_ADDON_WORKSPACE
+      $SCRIPT_DIR/add_member -remote $REMOTE -cluster $CLUSTER -workspace $GEODE_ADDON_WORKSPACE
    else
       echo "----------------------------------------------------------------"
       echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
@@ -241,6 +240,7 @@ if [ "$VM_ENABLED" == "true" ]; then
       echo >&2 "----------------------------------------------------------------"
       exit 1
    fi
+   VM_HOSTS=`getClusterProperty "vm.hosts"`
    if [ "$VM_HOSTS" == "" ]; then
       echo >&2 "----------------------------------------------------------------"
       echo >&2 "WORKSPACE: $GEODE_ADDON_WORKSPACE"
@@ -250,7 +250,6 @@ if [ "$VM_ENABLED" == "true" ]; then
       echo >&2 "----------------------------------------------------------------"
       exit 1
    fi
-
 
    # Replace , with space
    __LOCATOR_HOSTS=$(echo "$VM_LOCATOR_HOSTS" | sed "s/,/ /g")
@@ -306,21 +305,7 @@ else
    NODE_LOCAL="${NODE_NAME_PREFIX}-${MEMBER_NUM}.local"
    BIND_ADDRESS=$NODE_LOCAL
    HOSTNAME_FOR_CLIENTS=$NODE_LOCAL
-
-  # MEMBER_PREFIX=`getMemberPrefix`
-  # MEMBER_COUNT=`getMemberCount`
-  # NODE_COUNT=`getPodProperty "node.count" "$MEMBER_COUNT"`
-  # for i in $(seq 1 $MEMBER_COUNT); do
-  #    __MEMBER_NUM=`getMemberNumWithLeadingZero $i`
-  #    NODE_LOCAL="${NODE_NAME_PREFIX}-${__MEMBER_NUM}.local"
-  #    NODE_ADDR="$NODE_LOCAL:$MEMBER_START_PORT"
-  #    if [ "$MEMBER_TCP_LIST" == "" ]; then
-  #       MEMBER_TCP_LIST="$NODE_ADDR"
-  #    else
-  #       MEMBER_TCP_LIST="$MEMBER_TCP_LIST,$NODE_ADDR"
-  #    fi
-  # done
-
+   
 fi
 
 # Debug parameters.
@@ -697,7 +682,7 @@ function writeLocalTopBody()
    echo "#" >> $__SCRIPT_FILE
    echo "TYPE=\"\$1\"" >> $__SCRIPT_FILE
    echo "" >> $__SCRIPT_FILE
-   echo "# The seconde argument is -local or -vm. Ignore it." >> $__SCRIPT_FILE
+   echo "# The second argument is -local or -vm. Ignore it." >> $__SCRIPT_FILE
    echo "" >> $__SCRIPT_FILE
    echo "#" >> $__SCRIPT_FILE
    echo "# The third argument is the member number. Default: 1" >> $__SCRIPT_FILE

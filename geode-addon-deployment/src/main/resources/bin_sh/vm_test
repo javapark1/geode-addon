@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-vm -?"
+   echo "-cluster -vm -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -33,23 +33,30 @@ NAME
    $EXECUTABLE - Test the VM workspace configurations
 
 SYNOPSIS
-   $EXECUTABLE [-vm comma_separated_hosts] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-?]
 
 DESCRIPTION
-   Tests the current workspace's VM configurations. It reports each VM's configuration
-   software component status. The generated report should aids you in troubleshooting 
-   any VM-related issues before executing the 'vm_sync' command to synchronise your
-   workspace environment. The VM workspace is configured in the workspace 'setenv.sh'
-   file.
+   Tests workspace configurations of all the VMs defined by the VM_HOSTS environment
+   variable in the workspace 'setenv.sh' file. To test the cluster VMs, specify the
+   cluster with the '-cluster' option. To test a select list of VMs, specify the VM
+   list with the '-vm' option.
 
-   $GEODE_ADDON_WORKSPACE/setenv.sh
+   It reports each VM's configuration status for troubleshooting any VM-related issues
+   before executing the 'vm_sync' command to synchronize the workspace environment.
+
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
 
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
 
-    -vm comma_separated_hosts
-              A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
-              If this option overrides the workspace's VM_HOSTS set in the 'setenv.sh'
-              file.
+   -vm comma_separated_hosts
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+             This option overrides the workspace's VM_HOSTS set in the 'setenv.sh' file.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -66,12 +73,60 @@ EOF
    exit
 fi
 
-WORKSPACE_NAME=$(basename "$GEODE_ADDON_WORKSPACE")
-
+# Available only on VM workspaces
 if [ "$VM_ENABLED" != "true" ]; then
-   echo >&2 "ERROR: The cuurent workspace is not VM enabled [$WORKSPACE_NAME]. Command aborted."
-   exit 1
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
 fi
+
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
+fi
+
+WORKSPACE_NAME=$(basename "$GEODE_ADDON_WORKSPACE")
 
 # Replace , with space
 __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
@@ -100,6 +155,17 @@ if [ "$KEY" != "" ]; then
    fi
    VM_KEY="-i $KEY"
 fi
+
+# Fail fast: Exit if any of the hosts is not reachable
+for VM_HOST in $__VM_HOSTS; do
+   REPLY=$(ssh -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no -o PasswordAuthentication=no "echo hello" 2>&1)
+   EXIT_CODE=$?
+   if [ "$EXIT_CODE" != "0" ]; then
+      echo -e "ERROR: $VM_HOST - ${CLightRed}Failed${CNone} ($REPLY)"
+      echo "       Command aborted."
+      exit 1
+   fi
+done
 
 if [ "$VM_ENABLED" == "true" ]; then
    ISSUES_FOUND="false"
@@ -155,15 +221,15 @@ for VM_HOST in $__VM_HOSTS; do
    ADDON_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$ADDON_COMMAND")
    JAVA_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$JAVA_HOME_COMMAND")
    GEODE_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$GEODE_HOME_COMMAND")
-   if [ "$ADDON_EXISTS" == "false" ]; then
+   if [[ "$ADDON_EXISTS" == *"false" ]]; then
       ADDON_NOT_FOUND_LIST="$ADDON_NOT_FOUND_LIST $VM_HOST"
    fi
-   if [ "$JAVA_HOME_EXISTS" == "false" ]; then
+   if [[ "$JAVA_HOME_EXISTS" == *"false" ]]; then
       JAVA_HOME_NOT_FOUND_LIST="$JAVA_HOME_NOT_FOUND_LIST $VM_HOST"
       ISSUES_FOUND="true"
       SOFTWARE_ISSUES_FOUND="true"
    fi
-   if [ "$GEODE_HOME_EXISTS" == "false" ]; then
+   if [[ "$GEODE_HOME_EXISTS" == *"false" ]]; then
       GEODE_HOME_NOT_FOUND_LIST="$GEODE_HOME_NOT_FOUND_LIST $VM_HOST"
       ISSUES_FOUND="true"
       SOFTWARE_ISSUES_FOUND="true"
@@ -206,13 +272,14 @@ if [ "$ADDON_NOT_FOUND_LIST" != "" ]; then
    echo "$VM_GEODE_ADDON_HOME"
    echo "   geode-addon is not installed on the following VMs. It will be automatically installed"
    echo "   when you execute 'vm_sync'."
-   echo "      $JAVA_HOME_NOT_FOUND_LIST"
+   echo "      $ADDON_NOT_FOUND_LIST"
    echo "------------------------------------------------------------------------------------------"
 fi
 
 # Display cluster info
+if [ "$CLUSTER_SPECIFIED" == "true" ]; then
 __VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
-__VM_HOSTS=`getClusterProperty "vm.hosts"`
+__VM_HOSTS_CLUSTER=`getClusterProperty "vm.hosts"`
 __VM_USER=`getClusterProperty "vm.user" "$DEFAULT_USER"`
 __VM_PRIVATE_KEY_FILE=`getClusterProperty "vm.privateKeyFile"`
 cat <<EOF
@@ -224,7 +291,7 @@ Cluster Properties File:
 
 Environment:
           vm.enabled=$__VM_ENABLED
-            vm.hosts=$__VM_HOSTS
+            vm.hosts=$__VM_HOSTS_CLUSTER
              vm.user=$__VM_USER
    vm.privateKeyFile=$__VM_PRIVATE_KEY_FILE
 
@@ -252,9 +319,25 @@ if [ "$__VM_ENABLED" == "$VM_ENABLED" ] &&
    [ "$__VM_HOSTS" == "$VM_HOSTS" ] &&
    [ "$__VM_USER" == "$VM_USER" ] &&
    [ "$__VM_PRIVATE_KEY_FILE" == "$__VM_PRIVATE_KEY_FILE" ]; then
-   echo "The cluster VM environment is identical to the workspace VM environment."
+   echo "The cluster VM environment setup is identical to the workspace VM environment setup."
+fi
+
+# Check if the cluster has been deployed
+CLUSTER_NOT_FOUND_LIST=""
+# Replace , with space
+__VM_HOSTS=$(echo "$__VM_HOSTS_CLUSTER" | sed "s/,/ /g")
+if [ "$NETWORK_ISSUES_VM_HOSTS" == "" ]; then
+   CLUSTER_COMMAND="if [ -d "$VM_GEODE_ADDON_WORKSPACE/clusters/$CLUSTER" ]; then echo true; else echo false; fi"
+   for VM_HOST in $__VM_HOSTS; do
+      CLUSTER_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$CLUSTER_COMMAND")
+      if [[ "$CLUSTER_EXISTS" == *"false" ]]; then
+	 CLUSTER_NOT_FOUND_LIST="$CLUSTER_NOT_FOUND_LIST $VM_HOST"
+	 CLUSTER_ISSUES_FOUND=true
+      fi
+   done
 fi
 echo "------------------------------------------------------------------------------------------"
+fi
 
 # Summary
 echo "------------------------------------------------------------------------------------------"
@@ -291,13 +374,20 @@ else
       echo "     $GEODE_HOME_NOT_FOUND_LIST"
    fi
 fi
+if [ "$CLUSTER_SPECIFIED" == "true" ]; then
 echo "Cluster Issues: "
 if [ "$CLUSTER_ISSUES_FOUND" == "true" ]; then
-   echo "   The cluster VM environment is different from the workspace VM environment. This might" 
-   echo "   not be an error as cluster settings are typically a subset of the workspace settings."
-   echo "   Please verify."
+   if [ "$CLUSTER_NOT_FOUND_LIST" != "" ]; then
+      echo "   The following VM hosts do not have the '$CLUSTER' cluster deployed."
+      echo -e "     ${CLightRed}$CLUSTER_NOT_FOUND_LIST${CNone}"
+   else
+      echo "   The cluster VM environment is different from the workspace VM environment. This might" 
+      echo "   not be an error as cluster settings are typically a subset of the workspace settings."
+      echo "   Please verify."
+   fi
 else
    echo -e "   ${CLightGreen}None.${CNone}"
+fi
 fi
 echo "------------------------------------------------------------------------------------------"
 

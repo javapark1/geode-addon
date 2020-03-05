@@ -54,10 +54,7 @@ cat <<EOF
 NOTES
    'stop_member' gracefully terminates the member. However, you must wait
    till the cluster is safe or migration operations to complete before
-   stopping another member. You can monitor the cluster state from the
-   Management Center or executing the following command.
-
-   curl -sS http://member_host:member_port/geode/health
+   stopping another member.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then

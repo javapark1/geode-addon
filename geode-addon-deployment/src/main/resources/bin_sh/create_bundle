@@ -209,7 +209,7 @@ else
      PODS=$POD
    fi
    if [ "$DOCKER" != "" ]; then
-      if  [ "`isDockerExist $DOCKER`" == "false" ]; then 
+      if  [ "`isDockerExist $DOCKER`" == "false" ]; then
          echo "----------------------------------------------------------------"
          echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "    ERROR: Undefined Docker: [$DOCKER]. Command aborted."
@@ -224,10 +224,10 @@ else
          FILE_POSTFIX="${FILE_POSTFIX}-"
       fi
       FILE_POSTFIX="${FILE_POSTFIX}$DOCKER"
-     DOCKER_CLUSTERS=$DOCKER
+      DOCKER_CLUSTERS=$DOCKER
    fi
    if [ "$K8S" != "" ]; then
-      if  [ "`isK8sExist $K8S`" == "false" ]; then 
+      if  [ "`isK8sExist $K8S`" == "false" ]; then
          echo "----------------------------------------------------------------"
          echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
          echo "    ERROR: Undefined Kubernetes: [$K8S]. Command aborted."
@@ -336,7 +336,7 @@ for K8S in $K8S_CLUSTERS; do
    cp -f $K8S_DIR/README* $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
    if [ -d $K8S_DIR/bin_sh ]; then
       # bin_sh
-      cp -r $K8S_DIR/geode-addon $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
+      cp -r $K8S_DIR/bin_sh $TMP_BUNDLE_DIR/k8s/$K8S/ > /dev/null 2>&1
    fi
    if [ -d $K8S_DIR/etc ]; then
       # etc

@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -vm -quiet -?"
+   echo "-cluster -vm -simulate -quiet -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -34,22 +34,31 @@ NAME
                  geode-addon environment
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-quiet] [-?] bundle_file
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-simulate] [-quiet] bundle_file [-?]
 
 DESCRIPTION
-   Deploys the specified bundle file to the specified VMs. The VMs must have
-   this version of geode-addon already installed in the same path. (To install
-   geode-addon on other VMs, use 'vm_copy' and 'vm_exec'.)
- 
-   If the '-vm' option is not specified, then it deploys to the hosts defined
-   by the 'vm.locator.hosts' and 'vm.hosts' properties in the etc/cluster.properties file.
+   Deploys the specified bundle file to all the VMs defined by the VM_HOSTS
+   environment variable in the workspace 'setenv.sh' file. To deploy to only the
+   cluster VMs, specify the cluster with the '-cluster' option. To deploy to a select
+   list of VMs, specify the VM list with the '-vm' option.
+
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+
+   It prompts for confimration if the '-quiet' is not specified.
+
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
 
 OPTIONS
-   -cluster cluster_name
-             Unique cluster name. The cluster name is prepended to all member names.
 
    -vm comma_separated_hosts
-             A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+
+   -simulate
+             Print the remote commands but do not execute.
 
    -quiet
              Quiet mode. Supresses all interactive prompts.
@@ -75,6 +84,58 @@ EOF
    exit
 fi
 
+# Available only on VM workspaces
+if [ "$VM_ENABLED" != "true" ]; then
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
+fi
+
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
+fi
 
 BUNDLE_FILE_PATH=${@: -1}
 if [ ! -f "$BUNDLE_FILE_PATH" ]; then
@@ -91,12 +152,16 @@ if [ "$VM_ENABLED" != "true" ]; then
    exit 1 
 fi
 
+if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+   VM_HOSTS=$VM_HOSTS_ARG
+fi
 if [ "$VM_HOSTS" == "" ]; then
    echo "----------------------------------------------------------------"
-   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "WORKSPACE $GEODE_ADDON_WORKSPACE"
    if [ "$VM_HOSTS" == "" ]; then
       echo >&2 "    ERROR: You must specify the '-vm' option or set VM_HOSTS in the workspace"
       echo >&2 "           'setenv.sh' file. Command aborted."
+      echo "----------------------------------------------------------------"
       exit 1
    fi
    echo "----------------------------------------------------------------"
@@ -111,11 +176,27 @@ if [ "$VM_KEY" != "" ]; then
    VM_KEY="-i $VM_KEY"
 fi
 
+# Fail fast: Exit if any of the hosts is not reachable
+for VM_HOST in $__VM_HOSTS; do
+   REPLY=$(ssh -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no -o PasswordAuthentication=no "echo hello" 2>&1)
+   EXIT_CODE=$?
+   if [ "$EXIT_CODE" != "0" ]; then
+      echo -e "ERROR: $VM_HOST - ${CLightRed}Failed${CNone} ($REPLY)"
+      echo "       Command aborted."
+      exit 1
+   fi
+done
+
+# Simulation runs in the quite mode
+if [ "$SIMULATE" == "true" ]; then
+   QUIET=$SIMULATE
+fi
+
 # Find all existing and new hosts
 EXISTING_HOSTS=
 NEW_HOSTS=
 THIS_VM_HOSTNAME=`hostname`
-COMMAND="if [ -d "$BASE_DIR" ]; then echo true; else echo false; fi"
+COMMAND="if [ -d "$VM_GEODE_ADDON_HOME" ]; then echo true; else echo false; fi"
 EXISTING_HOST_COUNT=0
 NEW_HOST_COUNT=0
 for VM_HOST in $__VM_HOSTS; do
@@ -156,7 +237,7 @@ if [ "$QUIET" == "false" ]; then
 fi
 
 if [ $DEPLOYMENT_HOST_COUNT -eq 0 ]; then
-   echo "No qualified hosts. Command aborted." 
+   echo "No qualified hosts found. Command aborted." 
    echo ""
    exit
 fi
@@ -171,11 +252,21 @@ if [ "$EXISTING_HOSTS" != "" ]; then
    echo "Existing Hosts:"
    for VM_HOST in $EXISTING_HOSTS; do
       echo "   Deploying to $VM_HOST..."
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $BASE_DIR/bundle"
-      scp -q -o stricthostkeychecking=no $VM_KEY $BUNDLE_FILE_PATH $VM_USER@$VM_HOST:$BASE_DIR/bundle
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $BASE_DIR -xzf $BASE_DIR/bundle/$BUNDLE_FILE"
+      if [ "$SIMULATE" == "true" ]; then
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE/bundle"
+         echo scp -q -o stricthostkeychecking=no $VM_KEY $BUNDLE_FILE_PATH $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/bundle
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf $VM_GEODE_ADDON_WORKSPACE/bundle/$BUNDLE_FILE"
+      else
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE/bundle"
+         scp -q -o stricthostkeychecking=no $VM_KEY $BUNDLE_FILE_PATH $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/bundle
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf $VM_GEODE_ADDON_WORKSPACE/bundle/$BUNDLE_FILE"
+      fi
    done
 fi
 
-echo "Deployment complete."
 echo ""
+if [ "$SIMULATE" == "true" ]; then
+   echo "Simulation deployment complete."
+else
+   echo "Deployment complete."
+fi

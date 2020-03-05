@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-vm -quiet -?"
+   echo "-cluster -vm -simulate -quiet -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -33,23 +33,36 @@ NAME
    $EXECUTABLE - Deploy the geode-addon distribution to VMs
 
 SYNOPSIS
-   $EXECUTABLE [-vm comma_separated_hosts] [-quiet] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-simulate] [-quiet] [-?]
 
 DESCRIPTION
-   Deploys the geode-addon distribution to the specified VMs. It first scans
-   the VMs and displays the VMs that already have geode-addon installed. It
-   then prompt you to optionally overwrite the existing installations. The VMs'
+   Deploys the geode-addon distribution to all the VMs defined by the VM_HOSTS
+   environment variable in the workspace 'setenv.sh' file. To deploy to only the
+   cluster VMs, specify the cluster with the '-cluster' option. To deploy to a select
+   list of VMs, specify the VM list with the '-vm' option.
+
+   It first scans the VMs and displays the VMs that already have geode-addon installed.
+   It then prompts for optionally overwriting the existing installations. The VMs'
    geode-addon installation directory path is defined by VM_GEODE_ADDON_HOME
    set in the workspace 'setenv.sh' file.
 
-   If the '-vm' option is not specified, then it deploys to the hosts defined
-   by the VM_HOSTS environment variable set in the workspace 'setenv.sh' file.
-   
    $GEODE_ADDON_WORKSPACE/setenv.sh
 
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
+   
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
+
    -vm comma_separated_hosts
-             A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+
+   -simulate
+             Print the remote commands but do not execute.
 
    -quiet
              Quiet mode. Supresses all interactive prompts.
@@ -72,6 +85,7 @@ EOF
    exit
 fi
 
+# Available only on VM workspaces
 if [ "$VM_ENABLED" != "true" ]; then
    echo "----------------------------------------------------------------"
    echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
@@ -80,15 +94,54 @@ if [ "$VM_ENABLED" != "true" ]; then
    exit 1 
 fi
 
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
+fi
+
 echo "----------------------------------------------------------------"
 echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-if [ "$VM_HOSTS" == "" ]; then
-   echo "    ERROR: Neither '-vm' nor 'VM_HOSTS' defined. Command aborted."
-   exit 1
-fi
 echo "Deploying geode-addon to the following VM hosts:"
-echo "    $VM_HOSTS
-echo "   
+echo "    $VM_HOSTS"
 echo "----------------------------------------------------------------"
 
 # Replace , with space
@@ -100,11 +153,26 @@ if [ "$VM_KEY" != "" ]; then
    VM_KEY="-i $VM_KEY"
 fi
 
+# Fail fast: Exit if any of the hosts is not reachable
+for VM_HOST in $__VM_HOSTS; do
+   REPLY=$(ssh -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no -o PasswordAuthentication=no "echo hello" 2>&1)
+   EXIT_CODE=$?
+   if [ "$EXIT_CODE" != "0" ]; then
+      echo -e "ERROR: $VM_HOST - ${CLightRed}Failed${CNone} ($REPLY)"
+      echo "       Command aborted."
+      exit 1
+   fi
+done
+
+# Simulation runs in the quite mode
+if [ "$SIMULATE" == "true" ]; then
+   QUIET=$SIMULATE
+fi
+
 # Find all existing and new hosts
 EXISTING_HOSTS=
 NEW_HOSTS=
 THIS_VM_HOSTNAME=`hostname`
-echo "VM_GEODE_ADDON_HOME=$VM_GEODE_ADDON_HOME"
 COMMAND="if [ -d "$VM_GEODE_ADDON_HOME" ]; then echo true; else echo false; fi"
 EXISTING_HOST_COUNT=0
 NEW_HOST_COUNT=0
@@ -160,9 +228,8 @@ if [ "$QUIET" == "false" ]; then
    fi
 fi
 
-
 if [ $DEPLOYMENT_HOST_COUNT -eq 0 ]; then
-   echo "No qualified hosts. Command aborted." 
+   echo "No qualified hosts found. Command aborted." 
    echo ""
    exit
 fi
@@ -174,17 +241,25 @@ TAR_BALL_NAME=$ROOT_DIR_NAME.tar
 TAR_BALL_PATH=$GEODE_ADDON_WORKSPACE/bundles/$TAR_BALL_NAME
 VM_GEODE_ADDON_HOME_PARENT_DIR="$(dirname "$VM_GEODE_ADDON_HOME")"
 
-pushd $GEODE_ADDON_HOME/.. 
-tar czf $TAR_BALL_GZ_PATH $ROOT_DIR_NAME
-popd
+if [ "$SIMULATE" != "true" ]; then
+   pushd $GEODE_ADDON_HOME/.. 
+   tar czf $TAR_BALL_GZ_PATH $ROOT_DIR_NAME
+   popd
+fi
 
 if [ "$NEW_HOSTS" != "" ]; then
    echo "New Hosts:"
    for VM_HOST in $NEW_HOSTS; do
       echo "   Deploying to $VM_HOST..."
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
-      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
-      ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      if [ "$SIMULATE" == "true" ]; then
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
+         echo scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         echo ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      else
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
+         scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      fi
    done
 fi
 
@@ -192,9 +267,18 @@ if [ "$EXISTING_HOSTS" != "" ]; then
    echo "Existing Hosts:"
    for VM_HOST in $EXISTING_HOSTS; do
       echo "   Deploying to $VM_HOST..."
-      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
-      ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      if [ "$SIMULATE" == "true" ]; then
+         scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      else
+         scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         ssh -q -n $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      fi
    done
 fi
-echo "Deployment complete."
 echo ""
+if [ "$SIMULATE" == "true" ]; then
+   echo "Simulation deployment complete."
+else
+   echo "Deployment complete."
+fi

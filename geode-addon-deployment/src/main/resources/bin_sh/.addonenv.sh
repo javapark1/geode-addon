@@ -484,7 +484,7 @@ GEODE_MAJOR_VERSION_NUMBER=`expr "$GEODE_VERSION" : '\([0-9]*\)'`
 #
 # GEODE_ADDON_VERSION: Determine the geode-addon version
 #
-for file in $BASE_DIR/lib/v4/geode-addon-core-*; do
+for file in $BASE_DIR/lib/geode-addon-core-*; do
    file=${file#*geode\-addon\-core\-}
    GEODE_ADDON_VERSION=${file%.jar}
 done

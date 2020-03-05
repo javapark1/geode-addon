@@ -157,7 +157,7 @@ Start the cluster.
 start_cluster
 ```
 
-## 7. Run Apps
+### 7. Run Apps
 
 For our example, we have the `perf_test` app already created. Edit the `client-cache.xml` file as before.
 

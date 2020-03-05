@@ -279,7 +279,7 @@ function getWorkspaces
 }
 
 #
-# Returns a comman separated list of VM hosts of the specified workspace. Returns an empty
+# Returns a comma separated list of VM hosts of the specified workspace. Returns an empty
 # string if the workspace does not exist.
 # @param    workspaceName    Workspace name
 #
@@ -296,7 +296,7 @@ function getVmWorkspaceHosts
 }
 
 #
-# Returns a comman separated list of VM hosts of the specified workspace. Returns an empty
+# Returns a comma separated list of VM hosts of the specified workspace. Returns an empty
 # string if the workspace does not exist.
 # @param    workspaceName    Workspace name
 #
@@ -516,7 +516,7 @@ function isDockerExist
    fi
 }
 
-# 
+#
 # Returns "true" if the specified k8s cluster exists. Otherwise, "false".
 # @required K8S_DIR
 # @param    dockerClusterName
@@ -694,7 +694,7 @@ function getVmMemberPid
    __HOST=$1
    __MEMBER=$2
    __WORKSPACE=$3
-   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST  -o stricthostkeychecking=no "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
+   members=`ssh -q -n $VM_KEY $VM_USER@$__HOST -o stricthostkeychecking=no "$VM_JAVA_HOME/bin/jps -v | grep pado.vm.id=$__MEMBER | grep geode-addon.workspace=$__WORKSPACE" | awk '{print $1}'`
    spids=""
    for j in $members; do
       spids="$j $spids"
@@ -1051,7 +1051,7 @@ function getProperty2
       while IFS= read -r line; do
          line=`trimString $line`
          if [[ $line == $2=* ]]; then
-            __VALUE=${line##$2=}
+            __VALUE=${line#$2=}
             break;
          fi
       done < "$__PROPERTIES_FILE"

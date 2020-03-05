@@ -371,7 +371,7 @@ __command_complete()
          type_list=`getApps`
       fi
       ;;
-   -cluster) 
+   -cluster)
       if [ "$command" == "create_k8s" ]; then
          __ENV="k8s"
       elif [ "$command" == "create_docker" ]; then
@@ -381,10 +381,10 @@ __command_complete()
       fi
       type_list=`getClusters $__ENV`
       ;;
-   -k8s) 
+   -k8s)
       type_list=`getClusters k8s`
       ;;
-   -docker) 
+   -docker)
       if [ "$command" == "create_bundle" ]; then
          type_list=`getClusters docker`
       else
@@ -403,11 +403,6 @@ __command_complete()
    -port)
       if [ "$command" == "create_cluster" ]; then
          type_list="$DEFAULT_LOCATOR_START_PORT"
-      fi
-     ;;
-   -id)
-      if [ "$command" == "create_cluster" ]; then
-         type_list="-1 1 2 3 4 5 6 7 8 9"
       fi
      ;;
    *)

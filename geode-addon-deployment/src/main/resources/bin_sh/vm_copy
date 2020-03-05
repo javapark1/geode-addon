@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -vm -key -?"
+   echo "-cluster -vm -simulate -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -38,43 +38,46 @@ NAME
                  specified VMs in geode-addon environment
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-key private_key_file] [-vm comma_separated_hosts] [-mirror] [-?] file_path
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-mirror] [-simulate] [-?] file_path
 
 DESCRIPTION
-   Copies the specified file or directory to the to the specified VMs. The
-   file path can be an absolute or a relative path but it must exist in the
-   workspace directory hiearchy. To copy non-workspace files, specify the 'mirror'
-   option, which copies the file to the exact same path as the local path.
+   Copies the specified file or directory to all the VMs defined by the VM_HOSTS
+   environment variable in the workspace 'setenv.sh' file. To copy to only the
+   cluster VMs, specify the cluster with the '-cluster' option. To copy to a select
+   list of VMs, specify the VM list with the '-vm' option.
 
-   If the file path is a directory then all of the files in the directory
-   are recursively copied.
+   The file path can be an absolute or a relative path but it must exist in the workspace
+   directory hiearchy. To copy non-workspace files, specify the 'mirror' option, which
+   copies the file to the same path as the local path.
 
-   If the '-vm' option is not specified, then it copies the specified file to
-   the hosts defined by the VM_HOSTS environment variable defined in the
-   workspace 'setenv.sh' file.
+   If the file path is a directory then all of the files in the directory are recursively
+   copied.
+
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
 
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
 
-    -cluster cluster_name
-              Cluster name.
+   -vm comma_separated_hosts
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
 
-    -vm comma_separated_hosts
-              A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+   -mirror
+             If this option is specified, then the absolute path of the specified
+             file is duplicated in the remote VMs such that both local and remote
+             files paths will be identical. If the absolute path does not exist in
+             the remote VMs, then this command will fail.
 
-    -key private_key_file
-              Private key file path. To ssh into your VM such as the ones on AWS, you may
-              supply your private key file. Normally, the private key file is not
-              required if you have set public-key authentication.
+   -simulate
+             Print the remote commands but do not execute.
 
-    -mirror
-              If this option is specified, then the absolute path of the specified
-              file is duplicated in the remote VMs such that both local and remote
-              files paths will be identical. If the absolute path does not exist in
-              the remote VMs, then this command will fail.
-
-    file_path
-              File or directory path. Multiple files not supported. If directory, then
-              the entire directory is recursively copied to all the VMs.
+   file_path
+             File or directory path. Multiple files not supported. If directory, then
+             the entire directory is recursively copied to all the VMs.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -91,6 +94,60 @@ EOF
    exit
 fi
 
+# Available only on VM workspaces
+if [ "$VM_ENABLED" != "true" ]; then
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
+fi
+
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
+fi
+
+# Check file path
 FILE_PATH=${@: -1}
 ABS_PATH=$(getAbsPath "$FILE_PATH")
 if [ "$ABS_PATH" == "-1" ]; then
@@ -101,18 +158,22 @@ if [ "$ABS_PATH" == "-1" ]; then
    exit 1
 fi
 
+# Fail fast: Exit if any of the hosts is not reachable
+for VM_HOST in $__VM_HOSTS; do
+   REPLY=$(ssh -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no -o PasswordAuthentication=no "echo hello" 2>&1)
+   EXIT_CODE=$?
+   if [ "$EXIT_CODE" != "0" ]; then
+      echo -e "ERROR: $VM_HOST - ${CLightRed}Failed${CNone} ($REPLY)"
+      echo "       Command aborted."
+      exit 1
+   fi
+done
+
 # 
 # VM cluster
 #
-if [ "$VM_HOSTS" == "" ]; then
-   echo "----------------------------------------------------------------"
-   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   if [ "$VM_HOSTS" == "" ]; then
-      echo >&2 "    ERROR: You must specify the '-vm' option or set VM_HOSTS in the workspace"
-      echo >&2 "           'setenv.sh' file. Command aborted."
-      exit 1
-   fi
-   echo "----------------------------------------------------------------"
+if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+   VM_HOSTS=$VM_HOSTS_ARG
 fi
 
 # Replace , with space
@@ -182,8 +243,19 @@ for VM_HOST in $__VM_HOSTS; do
    fi
 
    echo "   Copying to $VM_HOST..."
-   scp -q -r -o stricthostkeychecking=no $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
+   if [ "$SIMULATE" == "true" ]; then
+      echo scp -q -r -o stricthostkeychecking=no $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
+   else
+      scp -q -r -o stricthostkeychecking=no $VM_KEY $ABS_PATH $VM_USER@$VM_HOST:$TO_PATH
+   fi
 done
 
-echo "Copy complete."
-echo ""
+if [ "$SIMULATE" == "true" ]; then
+   echo "Simulation copy complete."
+elif [ "$VM_SPECIFIED" == "true" ]; then
+   echo "VM copy complete."
+elif [ "$CLUSTER_SPECIFIED" == "true" ]; then
+   echo "Cluster copy complete."
+else
+   echo "Workspace copy complete."
+fi

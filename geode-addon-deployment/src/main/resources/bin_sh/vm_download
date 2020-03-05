@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -vm -key -?"
+   echo "-cluster -vm -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -33,34 +33,28 @@ NAME
    $EXECUTABLE - Download all the log and statistics files from the VMs to the local file system
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-key private_key_file] [-vm comma_separated_hosts] [-mirror] [-?] file_path
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-?]
 
 DESCRIPTION
    Downloads the log and statistics files from the VMs to the local cluster's
    'log' and 'stats' directories.
 
    If the '-vm' option is not specified, then it downloads the log and statistics files
-   from the hosts defined by the 'vm.locator.hosts' and 'vm.hosts' in the 'etc/cluster.properties'
-   file.
+   from the hosts defined by the 'vm.locator.hosts' and 'vm.hosts' properties in the
+   'etc/cluster.properties' file.
 
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
 
-    -cluster cluster_name
-              Cluster name.
-
-    -vm comma_separated_hosts
-              A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
-
-    -key private_key_file
-              Private key file path. To ssh into your VM such as the ones on AWS, you may
-              supply your private key file. Normally, the private key file is not
-              required if you have set public-key authentication.
+   -vm comma_separated_hosts
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
-   $EXECUTABLE -cluster $CLUSTER file_path
+   $EXECUTABLE -cluster $CLUSTER
 EOF
 fi
 cat <<EOF
@@ -71,6 +65,15 @@ EOF
    exit
 fi
 
+if [ "$VM_ENABLED" != "true" ]; then
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
+fi
+
+# Make sure the cluster is VM enabled
 VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
 if [ "$VM_ENABLED" == "false" ]; then
    echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
@@ -81,7 +84,7 @@ fi
 # 
 # VM cluster
 #
-if [ "$VM_SPECIFIED" == "true" ]; then
+if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
    VM_HOSTS=$VM_HOSTS_ARG
 else
    VM_HOSTS=$(getAllMergedVmHosts)
@@ -90,8 +93,8 @@ if [ "$VM_HOSTS" == "" ]; then
    echo "----------------------------------------------------------------"
    echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
    if [ "$VM_HOSTS" == "" ]; then
-      echo >&2 "    ERROR: You must specify the '-vm' option or set VM_HOSTS in the workspace"
-      echo >&2 "           'setenv.sh' file. Command aborted."
+      echo >&2 "    ERROR: You must specify the '-vm' option or set the 'vm.hosts' property"
+      echo >&2 "           in the 'etc/cluster.properties' file. Command aborted."
       exit 1
    fi
    echo "----------------------------------------------------------------"
@@ -136,7 +139,6 @@ if [ ! -d "$STATS_DIR" ]; then
    mkdir -p $STATS_DIR
 fi
 
-
 for VM_HOST in $__VM_HOSTS; do
    if [ "$VM_HOST" == "$THIS_VM_HOSTNAME" ]; then
       continue
@@ -161,4 +163,3 @@ echo "   $LOG_DIR"
 echo "   $STATS_DIR"
 echo ""
 echo "Download complete."
-echo ""

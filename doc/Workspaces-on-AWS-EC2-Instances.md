@@ -24,7 +24,7 @@ create_workspace -quiet \
 -name ws-aws-gemfire \
 -cluster mygemfire \
 -java /home/dpark/Work/linux/jdk1.8.0_212 \
--geode /home/dpark/Work/linux/apache-geode-1.11.0 \
+-geode /home/dpark/Work/linux/pivotal-gemfire-9.9.1 \
 -vm 3.135.221.186,18.191.168.36,3.135.186.150,3.135.232.83,18.218.40.90,18.217.250.90 \
 -vm-java /home/ec2-user/Geode/jdk1.8.0_212 \
 -vm-geode /home/ec2-user/Geode/pivotal-gemfire-9.9.1 \
@@ -34,7 +34,7 @@ create_workspace -quiet \
 -vm-key /home/dpark/Work/aws/dpark.pem
 ```
 
-The above creates the workspace named `ws-aws-geode` and places all the installations in the `/home/ec2-user/Geode` directory. When you are done with installation later, each EC2 instance will have the following folder contents:
+The above creates the workspace named `ws-aws-gemfire` and places all the installations in the `/home/ec2-user/Geode` directory. When you are done with installation later, each EC2 instance will have the following folder contents:
 
 ```console
 /home/ec2-user/Geode
@@ -58,8 +58,8 @@ The following table shows the breakdown of the options.
 | -name          | ws-aws-gemfire                                           | Workspace name                  |
 | -cluster       | mygeode                                                  | Cluster name                    |
 | -java          | /home/dpark/Work/linux/jdk1.8.0_212                      | JAVA_HOME, local file system    |
-| -geode         | /home/dpark/Work/linux/apache-geode-1.11.0               | GEODE_HOME, local file system   |
-| -vm            | 3.135.221.186,18.191.168.36,3.135.186.150,3.135.232.83,18.218.40.90,18.217.250.90 | EC2 instance public IP addresses. Must be separated by command with no spaces |
+| -geode         | /home/dpark/Work/linux/pivotal-gemfire-9.9.1             | GEODE_HOME, local file system   |
+| -vm            | 3.135.221.186,18.191.168.36,3.135.186.150,3.135.232.83,18.218.40.90,18.217.250.90 | EC2 instance public IP addresses. Must be separated by comma with no spaces |
 | -vm-java       | /home/ec2-user/Geode/jdk1.8.0_212                        | JAVA_HOME, EC2 instances        |
 | -vm-geode      | /home/ec2-user/Geode/pivotal-gemfire-9.9.1               | GEODE_HOME, EC2 instances       |
 | -vm-addon      | /home/ec2-user/Geode/geode-addon_0.9.0-SNAPSHOT          | GEODE_ADDON_HOME, EC2 instances |
@@ -86,7 +86,7 @@ heap.min=512m
 heap.max=512m
 ```
 
-We have launched two (2) locator EC2 instances. Let's set `vm.locator.hosts` to their IP addresses.
+We have launched two (2) EC2 instances for locators. Let's set `vm.locator.hosts` to their IP addresses.
 
 ```bash
 # Set the first VM as the locator
@@ -168,8 +168,8 @@ Example:
 `vm_sync` will display warning messages similar to the output shown above since the new EC2 instances do not have the required software installed. Download the required software and install them by running the `vm_install` command as shown below.
 
 ```console
- vm_install -java ~/Downloads/jdk-8u212-linux-x64.tar.gz \
-            -geode ~/Downloads/pivotal-gemfire-9.9.1.tgz
+vm_install -java ~/Downloads/jdk-8u212-linux-x64.tar.gz \
+           -geode ~/Downloads/pivotal-gemfire-9.9.1.tgz
 ```
 
 ## Start Cluster
@@ -200,10 +200,10 @@ show_log
 show_log -num 2
 
 # locator1
-show_log
+show_log -log locator
 
 # locator2
-show_log -num 2
+show_log -log locator -num 2
 ```
 
 ## Pulse
@@ -275,6 +275,8 @@ vm_sync
 The `vm_sync` command output should be similar to what we have seen before.
 
 ```console
+Deploying geode-addon_0.9.0-SNAPSHOT to 18.219.75.145...
+
 Workspace sync: ws-aws-gemfire
    Synchronizing 3.135.221.186...
    Synchronizing 18.191.168.36...
@@ -306,6 +308,7 @@ To install Geode on the above VMs, download the correct version of JDK and execu
 Example:
    vm_install -geode pivotal-gemfire-9.9.1.tar.gz
 ------------------------------------------------------------------------------------------
+Workspace sync complete.
 ```
 
 Let's install Java and GemFire as before.
@@ -332,7 +335,7 @@ ssh -i dpark.pem ec2-user@18.219.75.145
 We need to initialize `geode-addon` before we can run apps. Let's do this in `.bashrc` so that it is done automatically when we login next time.
 
 ```console
-echo ". /home/ec2-user/Geode/workspaces/initenv.sh" >> ~/.bashrc
+echo ". /home/ec2-user/Geode/workspaces/initenv.sh -quiet" >> ~/.bashrc
 . ~/.bashrc
 ```
 
@@ -343,7 +346,7 @@ cd_app perf_test; cd bin_sh
 ./test_ingestion -run
 ```
 
-## Preserve Workspace
+## Preserving Workspace
 
 If you terminate the EC2 instances without removing the workspace, then your workspace will be preserved on your local machine. This means you can later reactivate the workspace by simply launching new EC2 instances and configuring the workspace with the new public IP addresses. The following link provides step-by-step instructions describing how to reactivate VM workspaces.
 
@@ -367,10 +370,10 @@ If you want to preserve the workspace so that you can later reactivate it then s
 ```console
 # Simulate removing workspace from all VMs. Displays removal steps but does not
 # actually remove the workspace.
-remove_workspace -workspace ws-vm -simulate
+remove_workspace -workspace ws-aws-gemfire -simulate
 
 # Remove workspace from all VMs. Runs in interactive mode.
-remove_workspace -workspace ws-vm
+remove_workspace -workspace ws-aws-gemfire
 ```
 
 3. Terminate the EC2 instances

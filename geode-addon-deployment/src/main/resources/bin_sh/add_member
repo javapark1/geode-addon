@@ -39,6 +39,7 @@ DESCRIPTION
    For VM clusters, the member number reflects the host in the order it is
    defined by the cluster property, 'vm.hosts', in the file shown below.
    (Run 'show_cluster -long' to see the VM member numbers that map to hosts.)
+
 EOF
 if [ "$MAN_SPECIFIED" == "true" ]; then
 cat <<EOF

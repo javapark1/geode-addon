@@ -407,8 +407,8 @@ else
          if [ "$INPUT" != "" ]; then
             VM_HOSTS=$INPUT
          fi
-         # Remove all spaces from VM_HOSTS
-         VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/ //g")
+         # Remove spaces
+         VM_HOSTS=${VM_HOSTS//[[:space:]]/}
 
          # VM_USER
          echo "Enter VM user name."

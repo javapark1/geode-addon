@@ -30,25 +30,32 @@ WORKSPACE
    $GEODE_ADDON_WORKSPACE
 
 NAME
-   $EXECUTABLE - Synchronize the currrent workspace with the VM workspaces
+   $EXECUTABLE - Synchronize the rmote VMs with the local workspace
 
 SYNOPSIS
-   $EXECUTABLE [-vm comma_separated_hosts] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-vm comma_separated_hosts] [-simulate] [-?]
 
 DESCRIPTION
-   Synchronizes the current workspace with VM workspaces. If the VM workspaces
-   do not exist then it remotely creates and synchronizes them. The VM workspace
-   path is defined by VM_GEODE_ADDON_WORKSPACE in the workspace 'setenv.sh' file.
+   Synchronizes all the VMs defined by VM_HOSTS environment variable in the workspace
+   'setenv.sh' file with the local workspace. To synchronize only the cluster VMs, specify
+   the cluster with the '-cluster' option. To synchronize a select list of VMs, specify
+   the VM list with the '-vm' option.
 
-   If the '-vm' option is not specified, then it deploys to the hosts defined
-   by the VM_HOSTS environment variable set in the workspace 'setenv.sh' file.
-   
-   $GEODE_ADDON_WORKSPACE/setenv.sh
+   Note that this command and all other commands that begin with the "vm_" preprefix are
+   available only on VM workspaces.
+
+   The '-vm' option overrides both the '-cluster' option and VM_HOSTS. The '-cluster' option
+   overrides VM_HOSTS. 
 
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
 
-    -vm comma_separated_hosts
-              A list of VM hosts or addresses separated by comma. Spaces NOT allowed.
+   -vm comma_separated_hosts
+             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+
+   -simulate
+             Print the remote commands but do not execute.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -65,12 +72,60 @@ EOF
    exit
 fi
 
-WORKSPACE_NAME=$(basename "$GEODE_ADDON_WORKSPACE")
-
+# Available only on VM workspaces
 if [ "$VM_ENABLED" != "true" ]; then
-   echo >&2 "ERROR: The cuurent workspace is not VM enabled [$WORKSPACE_NAME]. Command aborted."
-   exit 1
+   echo "----------------------------------------------------------------"
+   echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+   echo "    ERROR: The workspace is not a VM workspace. Command aborted."
+   echo "----------------------------------------------------------------"
+   exit 1 
 fi
+
+# If the -vm option is specified then it overrides all other options
+if [ "$VM_SPECIFIED" == "true" ]; then
+   if [ "$VM_HOSTS_ARG" != "" ] && [[ "$VM_HOSTS_ARG" != *"-"* ]]; then
+      VM_HOSTS=$VM_HOSTS_ARG
+   else
+      echo "----------------------------------------------------------------"
+      echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+      echo >&2 "ERROR: Invalid value for -vm [$VM_HOSTS_ARG]. Command aborted."
+      echo "----------------------------------------------------------------"
+      exit 1
+   fi
+else
+   # The -cluster option overrides VM_HOSTS
+   if [ "$CLUSTER_SPECIFIED" == "true" ]; then
+      if [ "`isClusterExist "$CLUSTER"`" == "false" ]; then 
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Cluster does not exist [$CLUSTER]. Command aborted."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_ENABLED=`getClusterProperty "vm.enabled" "false"`
+      if [ "$VM_ENABLED" == "false" ]; then
+         echo "----------------------------------------------------------------"
+         echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+         echo >&2 "ERROR: Not a VM cluster [$CLUSTER]. To enable VMs, set the 'vm.enabled' property"
+         echo >&2 "       in the 'etc/cluster.properties' file."
+         echo "----------------------------------------------------------------"
+         exit 1
+      fi
+      VM_HOSTS=`getClusterProperty "vm.hosts"`
+      if [ "$VM_HOSTS" == "" ]; then
+         if [ "$VM_HOSTS" == "" ]; then
+            echo "----------------------------------------------------------------"
+            echo "WORKSPACE: $GEODE_ADDON_WORKSPACE"
+            echo >&2 "    ERROR: The 'vm.hosts' property is not set in the 'etc/cluster.properties' file."
+            echo >&2 "           file. Command aborted."
+            echo "----------------------------------------------------------------"
+            exit 1
+         fi
+      fi
+   fi
+fi
+
+WORKSPACE_NAME=$(basename "$GEODE_ADDON_WORKSPACE")
 
 # Replace , with space
 __VM_HOSTS=$(echo "$VM_HOSTS" | sed "s/,/ /g")
@@ -90,6 +145,17 @@ if [ "$KEY" != "" ]; then
    VM_KEY="-i $KEY"
 fi
 
+# Fail fast: Exit if any of the hosts is not reachable
+for VM_HOST in $__VM_HOSTS; do
+   REPLY=$(ssh -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no -o PasswordAuthentication=no "echo hello" 2>&1)
+   EXIT_CODE=$?
+   if [ "$EXIT_CODE" != "0" ]; then
+      echo -e "ERROR: $VM_HOST - ${CLightRed}Failed${CNone} ($REPLY)"
+      echo "       Command aborted."
+      exit 1
+   fi
+done
+
 # Check if we need to deploy geode-addon to any of the VMs
 ADDON_COMMAND="if [ -d "$VM_GEODE_ADDON_HOME" ]; then echo true; else echo false; fi"
 JAVA_COMMAND="if [ -d "$VM_JAVA_HOME" ]; then echo true; else echo false; fi"
@@ -98,7 +164,7 @@ INSTALL_ADDON_HOST_LIST=""
 for VM_HOST in $__VM_HOSTS; do
    # geode-addon
    ADDON_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$ADDON_COMMAND")
-   if [ "$ADDON_EXISTS" == "false" ]; then
+   if [[ "$ADDON_EXISTS" == *"false" ]]; then
       INSTALL_ADDON_HOST_LIST="$INSTALL_ADDON_HOST_LIST $VM_HOST"
    fi
 done
@@ -113,9 +179,15 @@ if [ "$INSTALL_ADDON_HOST_LIST" != "" ]; then
 
    for VM_HOST in $INSTALL_ADDON_HOST_LIST; do
       echo "Deploying $ROOT_DIR_NAME to $VM_HOST..."
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
-      scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
-      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      if [ "$SIMULATE" == "true" ]; then
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
+         echo scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      else
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_HOME_PARENT_DIR"
+         scp -q -o stricthostkeychecking=no $VM_KEY $TAR_BALL_GZ_PATH $VM_USER@$VM_HOST:/tmp
+         ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_HOME_PARENT_DIR -xzf /tmp/$TAR_BALL_GZ_NAME; rm /tmp/$TAR_BALL_GZ_NAME"
+      fi
    done
 fi
 
@@ -167,26 +239,41 @@ for VM_HOST in $__VM_HOSTS; do
    fi
 
    echo "   Synchronizing $VM_HOST..."
-   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE"
-   scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
-   ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf /tmp/vm_sync.tar.gz; rm /tmp/vm_sync.tar.gz"
-   scp -q -o stricthostkeychecking=no $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
+   if [ "$SIMULATE" == "true" ]; then
+      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE"
+      echo scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
+      echo ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf /tmp/vm_sync.tar.gz; rm /tmp/vm_sync.tar.gz"
+      echo scp -q -o stricthostkeychecking=no $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
+   else
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "mkdir -p $VM_GEODE_ADDON_WORKSPACE"
+      scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/vm_sync.tar.gz $VM_USER@$VM_HOST:/tmp/
+      ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "tar -C $VM_GEODE_ADDON_WORKSPACE -xzf /tmp/vm_sync.tar.gz && rm /tmp/vm_sync.tar.gz"
+      scp -q -o stricthostkeychecking=no $VM_KEY /tmp/setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACE/
+   fi
 
    # Configure the workspaces directory if not configured already
    INITENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$INITENV_COMMAND")
    ADDONENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$ADDONENV_COMMAND")
    SETENV_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$SETENV_COMMAND")
 
-   if [ "$INITENV_EXISTS" != "true" ]; then
+   if [[ "$INITENV_EXISTS" == *"false" ]]; then
       scp -q -r -o stricthostkeychecking=no $VM_KEY $GEODE_ADDON_WORKSPACES_HOME/initenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
    fi
-   if [ "$ADDONENV_EXISTS" != "true" ]; then
+   if [[ "$ADDONENV_EXISTS" == *"false" ]]; then
       sed -e 's|export GEODE_ADDON_WORKSPACES_HOME=.*$|export GEODE_ADDON_WORKSPACES_HOME='\"$VM_GEODE_ADDON_WORKSPACES_HOME\"'|' \
           $GEODE_ADDON_WORKSPACES_HOME/.addonenv.sh > /tmp/.addonenv.sh
-      scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      if [ "$SIMULATE" == "true" ]; then
+         echo scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      else
+         scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/.addonenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/
+      fi
    fi
-   if [ "$SETENV_EXISTS" != "true" ]; then
-      scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
+   if [[ "$SETENV_EXISTS" == "false" ]]; then
+      if [ "$SIMULATE" == "true" ]; then
+         echo scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
+      else
+         scp -q -r -o stricthostkeychecking=no $VM_KEY /tmp/workspaces_setenv.sh $VM_USER@$VM_HOST:$VM_GEODE_ADDON_WORKSPACES_HOME/setenv.sh
+      fi
    fi
 done
 
@@ -204,10 +291,10 @@ GEODE_HOME_NOT_FOUND_LIST=""
 for VM_HOST in $__VM_HOSTS; do
    JAVA_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$JAVA_HOME_COMMAND")
    GEODE_HOME_EXISTS=$(ssh -q -n $VM_KEY $VM_USER@$VM_HOST -o stricthostkeychecking=no "$GEODE_HOME_COMMAND")
-   if [ "$JAVA_HOME_EXISTS" == "false" ]; then
+   if [[ "$JAVA_HOME_EXISTS" == *"false" ]]; then
       JAVA_HOME_NOT_FOUND_LIST="$JAVA_HOME_NOT_FOUND_LIST $VM_HOST"
    fi
-   if [ "$GEODE_HOME_EXISTS" == "false" ]; then
+   if [[ "$GEODE_HOME_EXISTS" == *"false" ]]; then
       GEODE_HOME_NOT_FOUND_LIST="$GEODE_HOME_NOT_FOUND_LIST $VM_HOST"
    fi
 done
@@ -244,3 +331,6 @@ fi
 
 echo -e "${CLightGreen}Workspace sync complete.${CNone}"
 echo ""
+if [ "$SIMULATE" == "true" ]; then
+   echo "Simulation complete."
+fi

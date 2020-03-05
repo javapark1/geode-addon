@@ -57,8 +57,8 @@ EOF
 fi
 
 # Displays short status of a VM cluster.
-# @required VM_LOCATOR_HOSTS Space separated list of VM hosts (addresses)
-# @required VM_HOSTS         Space separated list of VM hosts (addresses)
+# @required VM_LOCATOR_HOSTS A space separated list of VM locator hosts (addresses)
+# @required VM_HOSTS         A space separated list of VM member hosts (addresses)
 function displayVmClusterShort()
 {
    # Locators
@@ -94,7 +94,7 @@ function displayVmClusterShort()
    else
    echo -e "Locators Running: ${CLightRed}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    fi
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_MEMBER_COUNT -eq $MEMBER_COUNT ]; then
    echo -e " Members Running: ${CLightGreen}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    else
    echo -e " Members Running: ${CLightRed}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
@@ -272,7 +272,7 @@ function displayVmClusterLong()
    else
    echo -e "Locators Running: ${CLightRed}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    fi
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_MEMBER_COUNT -eq $MEMBER_COUNT ]; then
    echo -e " Members Running: ${CLightGreen}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    else
    echo -e " Members Running: ${CLightRed}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
@@ -298,6 +298,8 @@ function displayClusterShort()
    MEMBER_PREFIX=`getMemberPrefix`
    MEMBER_COUNT=`getMemberCount`
 
+   RUNNING_LOCATOR_COUNT=-1
+   RUNNING_MEMBER_COUNT=-1
    if ( [ "$POD_TYPE" == "local" ] && [ "$POD" == "local" ] )  ||
       ( [ "$OS_ENV" == "hh" ] && [ "$POD" == "local" ] )  ||
       ( [ "$OS_ENV" == "gg" ] && [ "$OS_POD" == "$POD" ] );  then
@@ -344,20 +346,22 @@ function displayClusterShort()
          fi
       done
       popd > /dev/null 2>&1
-   else
-      MEMBERS_RUNNING_COUNT="Unknown"
    fi
    echo "       WORKSPACE: $GEODE_ADDON_WORKSPACE"
    echo "         CLUSTER: $CLUSTER"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
    echo "             POD: $POD"
    echo "        POD_TYPE: $POD_TYPE"
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_LOCATOR_COUNT -lt 0 ]; then
+   echo -e "Locators Running: ${CYellow}Unknown${CNone}"
+   elif [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
    echo -e "Locators Running: ${CLightGreen}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    else
    echo -e "Locators Running: ${CLightRed}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    fi
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_MEMBER_COUNT -lt 0 ]; then
+   echo -e " Members Running: ${CYellow}Unknown${CNone}"
+   elif [ $RUNNING_MEMBER_COUNT -eq $MEMBER_COUNT ]; then
    echo -e " Members Running: ${CLightGreen}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    else
    echo -e " Members Running: ${CLightRed}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
@@ -524,8 +528,8 @@ function displayClusterLong()
          else
             echo "           STATE: Unknown"
             echo "             PID: Unknown"
-            RUNNING_LOCATOR_COUNT="Unknown"
-            DOWN_LOCATOR_COUNT="Unknown"
+            RUNNING_LOCATOR_COUNT=-1
+            DOWN_LOCATOR_COUNT=-1
          fi
          echo "    LOCATOR_PORT: $LOCATOR_PORT"
          echo "      DEBUG_PORT: $DEBUG_PORT"
@@ -625,8 +629,8 @@ function displayClusterLong()
          else
             echo "           STATE: Unknown"
             echo "             PID: Unknown"
-            RUNNING_MEMBER_COUNT="Unknown"
-            DOWN_MEMBER_COUNT="Unknown"
+            RUNNING_MEMBER_COUNT=-1
+            DOWN_MEMBER_COUNT=-1
          fi
          echo "     MEMBER_PORT: $MEMBER_PORT"
          echo " MEMBER_HTTP_URL: $MEMBER_HTTP_URL"
@@ -644,18 +648,22 @@ function displayClusterLong()
    # Summary
    echo "         CLUSTER: $CLUSTER"
    echo "    CLUSTER_TYPE: $CLUSTER_TYPE"
-   echo "   Locator Count: $LOCATOR_COUNT"
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_LOCATOR_COUNT -lt 0 ]; then
+   echo -e "Locators Running: ${CYellow}Unknown${CNone}"
+   elif [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
    echo -e "Locators Running: ${CLightGreen}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    else
    echo -e "Locators Running: ${CLightRed}$RUNNING_LOCATOR_COUNT/$LOCATOR_COUNT${CNone}"
    fi
-   if [ $RUNNING_LOCATOR_COUNT -eq $LOCATOR_COUNT ]; then
+   if [ $RUNNING_MEMBER_COUNT -lt 0 ]; then
+   echo -e " Members Running: ${CYellow}Unknown{CNone}"
+   elif [ $RUNNING_MEMBER_COUNT -eq $MEMBER_COUNT ]; then
    echo -e " Members Running: ${CLightGreen}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    else
    echo -e " Members Running: ${CLightRed}$RUNNING_MEMBER_COUNT/$MEMBER_COUNT${CNone}"
    fi
    echo "         Version: $GEODE_VERSION"
+   echo "----------------------------------------------------------------"
 } # displayClusterLong
 
 # Get workspace name
