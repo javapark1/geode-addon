@@ -107,9 +107,21 @@ if [ "$LIST" == "true" ] || [ "$HEADER" == "true" ]; then
          fi
       fi
    done
-   if [ "$HEADER" == "false" ]; then   
+   if [ "$HEADER" == "false" ]; then
       echo ""
+      echo "Bundle Commands"
+      echo "---------------"
+      echo "View header descriptions: show_bundle -header"
+   else
+      echo "Bundle Commands"
+      echo "---------------"
    fi
+
+   echo "View bundle instructions: show_bundle bundle_file_name"
+   echo " Preview bundle contents: install_bundle -download -preview bundle_file_name"
+   echo "          Install bundle: install_bundle -download bundle_file_name"
+   echo ""
+
    exit
 fi
 
