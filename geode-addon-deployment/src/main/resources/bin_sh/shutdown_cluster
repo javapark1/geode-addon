@@ -22,14 +22,14 @@ WORKSPACE
    $GEODE_ADDON_WORKSPACE
 
 NAME
-   $EXECUTABLE - Gracefully stop all active members in the specified cluster
-                 in the current geode-addon workspace
+   $EXECUTABLE - Gracefully shutdown all active Geode members in the specified cluster
 
 SYNOPSIS
    $EXECUTABLE [-cluster cluster_name] [-all] [-?]
 
 DESCRIPTION
-   Gracefully stops all active Geode members using 'curl' and stops management centers.
+   Gracefully shuts down all active members in the specified cluster. It will not
+   shutdown locators unless the '-all' option is specified.
 
 OPTIONS
    -cluster cluster_name

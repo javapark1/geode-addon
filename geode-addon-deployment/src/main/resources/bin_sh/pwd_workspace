@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Display the present (current) geode-addon workspace information 
 
 SYNOPSIS
-   $EXECUTABLE [-?]
+   $EXECUTABLE [-all] [-?]
 
 DESCRIPTION
    Displays the nam of th epresent (current) working workspace. If the '-all' option
@@ -62,9 +62,9 @@ if [ "$ALL" = "true" ]; then
    echo "           GEODE_ADDON_HOME: $GEODE_ADDON_HOME"
    echo "GEODE_ADDON_WORKSPACES_HOME: $GEODE_ADDON_WORKSPACES_HOME"
    echo "      GEODE_ADDON_WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   echo "                   CLUSTER_TYPE: $CLUSTER_TYPE"
-   echo "              Current Workspace: $WORKSPACE"
-   echo "                Current Cluster: $CLUSTER"
+   echo "               CLUSTER_TYPE: $CLUSTER_TYPE"
+   echo "          Current Workspace: $WORKSPACE"
+   echo "            Current Cluster: $CLUSTER"
    echo "----------------------------------------------------------------"
 else
    echo "$WORKSPACE"

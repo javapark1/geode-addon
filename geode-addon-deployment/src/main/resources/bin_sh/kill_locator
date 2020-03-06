@@ -31,28 +31,26 @@ DESCRIPTION
    Kills the specified Geode locator.
 
    For VM clusters, the locator number reflects the host in the order it is
-   defined by the cluster property, 'vm.hosts', in the file shown below.
+   defined by the cluster property, 'vm.hosts', in the 'etc/cluster.properties' file.
    (Run 'show_cluster -long' to see the VM locator numbers that map to hosts.)
-
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-   etc/cluster.properties
-EOF
-else
-cat <<EOF
-   $CLUSTER_DIR/etc/cluster.properties
-EOF
-fi
-cat <<EOF
 
 OPTIONS
    -num locator_number
              Locator number 1-$LAST_LOCATOR_NUM
 
 DEFAULT
-   $EXECUTABLE -num locator_number
+   $EXECUTABLE -num 1
 
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+FILES
+   $CLUSTER_DIR/etc/cluster.properties
+             The current cluster configuration file.
+
+EOF
+fi
+cat <<EOF
 SEE ALSO
 EOF
    printSeeAlsoList "*locator*" $EXECUTABLE

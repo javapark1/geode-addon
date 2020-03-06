@@ -33,7 +33,7 @@ SYNOPSIS
    cluster VMs, specify the cluster with the '-cluster' option. To execute in a select
    list of VMs, specify the VM list with the '-vm' option.
 
-   The specified commands will not be executed on this VM (the VM from which $EXECUTABLE
+   The specified commands will not be executed on this VM (the VM from which '$EXECUTABLE'
    is executed). To include this VM, specify the '-all' option.
 
    Note that this command and all other commands that begin with the "vm_" preprefix are
@@ -64,6 +64,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER "commands"
+
+FILES
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+             The current workspace configuration file.
 
 EOF
 fi

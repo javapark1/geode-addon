@@ -63,6 +63,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER file_path
+
+FILES
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+             The current workspace file.
 EOF
 fi
 cat <<EOF

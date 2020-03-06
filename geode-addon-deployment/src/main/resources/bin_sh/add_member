@@ -36,21 +36,9 @@ DESCRIPTION
    Please note that this is a geode-addon restriction, not a Geode
    product limitation.
  
-   For VM clusters, the member number reflects the host in the order it is
-   defined by the cluster property, 'vm.hosts', in the file shown below.
-   (Run 'show_cluster -long' to see the VM member numbers that map to hosts.)
-
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-   etc/cluster.properties
-EOF
-else
-cat <<EOF
-   $CLUSTER_DIR/etc/cluster.properties
-EOF
-fi
-cat <<EOF
+   For VM clusters, the locator number reflects the host in the order it is
+   defined by the cluster property, 'vm.hosts', in the 'etc/cluster.properties" file.
+   (Run 'show_cluster -long' to see the VM locator numbers that map to hosts.)
 
 OPTIONS
    -cluster cluster_name
@@ -58,7 +46,7 @@ OPTIONS
              cluster; otherwise, it starts the member in the default cluster.
 
    -num member_number
-             Member number 1-$LAST_MEMBER_NUM
+             Member number starting from 1.
 
    -all      
              This option applies to VM clusters only. If specified, it adds a member
@@ -75,6 +63,10 @@ cat <<EOF
 
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER
+
+FILES
+   $CLUSTER_DIR/etc/cluster.properties
+             The current cluster configuration file.
 
 EOF
 fi

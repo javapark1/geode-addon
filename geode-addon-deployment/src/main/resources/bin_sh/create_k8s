@@ -51,6 +51,10 @@ cat <<EOF
 DEFAULT
    $EXECUTABLE -k8s $DEFAULT_K8S -cluster cluster_name
 
+FILES
+   $GEODE_ADDON_WORKSPACE/k8s
+             The current workspace Kubernetes directory.
+
 EOF
 fi
    exit

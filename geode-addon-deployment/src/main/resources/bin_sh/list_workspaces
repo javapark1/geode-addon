@@ -30,7 +30,7 @@ DESCRIPTION
 
 OPTIONS
    -tree
-             If specified then displays workspaces and their consitituents in
+             If specified then displays workspaces and their constituents in
              a tree view.
 
 DEFAULT

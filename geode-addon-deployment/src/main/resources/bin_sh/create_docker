@@ -37,7 +37,7 @@ DESCRIPTION
 
 OPTIONS
    -docker compose
-             Docker compose driven Gedoe cluster.
+             Docker compose driven Geode cluster.
 
    -count member_count
              Number of members (servers) in the cluster. Default: 2
@@ -51,6 +51,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -docker $DEFAULT_DOCKER -cluster cluster_name
+
+FILES
+   $GEODE_ADDON_WORKSPACE/docker
+             The current workspace Docker directory.
 
 EOF
 fi

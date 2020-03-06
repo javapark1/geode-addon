@@ -31,19 +31,7 @@ SYNOPSIS
 DESCRIPTION
    Creates a new app by installing the specified app that is part of the
    geode-addon distribution. This command creates a new app directory in 
-   in the following workspace's apps directory:
-
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-   apps/
-EOF
-else
-cat <<EOF
-   $GEODE_ADDON_WORKSPACE/apps
-EOF
-fi
-cat <<EOF
+   the workspace 'apps' directory.
 
    You are encouraged to create as many apps as you need and configure them
    to work with a specific Geode cluster. By doing so, you minimize
@@ -71,6 +59,10 @@ cat <<EOF
 EOF
 fi
 cat <<EOF
+
+FILES
+   $GEODE_ADDON_WORKSPACE/apps
+             The current workspace apps directory where all the apps are stored.
 
 SEE ALSO
 EOF

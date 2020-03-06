@@ -22,7 +22,7 @@ NAME
    $EXECUTABLE - Display the specified geode-addon workspace information
 
 SYNOPSIS
-   $EXECUTABLE [-?]
+   $EXECUTABLE [-workspace] [-?]
 
 DESCRIPTION
    Displays the specified workspace information.

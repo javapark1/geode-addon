@@ -32,20 +32,8 @@ DESCRIPTION
    Stops the specified Geode locator.
 
    For VM clusters, the locator number reflects the host in the order it is
-   defined by the cluster property, 'vm.locator.hosts', in the file shown below.
-   (Run 'show_cluster -long' to see the VM locator numbers that map to hosts.)
-
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-   etc/cluster.properties
-EOF
-else
-cat <<EOF
-   $CLUSTER_DIR/etc/cluster.properties
-EOF
-fi
-cat <<EOF
+   defined by the cluster property, 'vm.locator.hosts', in the 'etc/cluster.properties'
+   file. (Run 'show_cluster -long' to see the VM locator numbers that map to hosts.)
 
    -cluster cluster_name
              Cluster name.
@@ -57,6 +45,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER -num $MEMBER_NUM
+
+FILES
+   $CLUSTER_DIR/etc/cluster.properties
+             The current cluster configuration file.
 
 EOF
 fi

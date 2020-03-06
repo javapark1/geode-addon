@@ -76,6 +76,10 @@ cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER -pod $POD -port $DEFAULT_MEMBER_START_PORT
 
+FILES
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+             The current workspace configuration file.
+
 EOF
 fi
 cat <<EOF

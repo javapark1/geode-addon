@@ -28,8 +28,7 @@ WORKSPACE
    $GEODE_ADDON_WORKSPACE
 
 NAME
-   $EXECUTABLE - Kill all clusters and management centers in the specified
-                 geode-addon workspace
+   $EXECUTABLE - Kill all clusters in the specified geode-addon workspace
 
 WARNING
    This command forcifully kills all clusters in the workspace that may lead
@@ -39,8 +38,8 @@ SYNOPSIS
    $EXECUTABLE [-workspace workspace_name | -all] [-quiet] [-?]
 
 DESCRIPTION
-   Kills all running Geode clusters and management centers by executing
-   'kill_cluster' and 'stop_mc' on each cluster in the workspace.
+   Kills all running Geode clusters by executing 'kill_cluster -all' on each cluster in
+   the workspace. Note that it kills both members and locators of all clusters.
 
 OPTIONS
    -workspace workspace_name
@@ -111,8 +110,7 @@ for ((__i = 0; __i < $NUM_WORKSPACES; __i++)); do
       CLUSTER="`basename $j`"
       echo ""
       echo -e "${CLightRed}Killing cluster $CLUSTER...${CNone}"
-      kill_cluster -cluster $CLUSTER
-      stop_mc -cluster $CLUSTER
+      kill_cluster -cluster $CLUSTER -all
    done
 done
 if [ "$WORKSPACE" != "$CURRENT_WORKSPACE" ]; then

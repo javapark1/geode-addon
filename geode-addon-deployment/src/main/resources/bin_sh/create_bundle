@@ -118,6 +118,10 @@ cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER
 
+FILES
+   $GEODE_ADDON_WORKSPACE/bundles
+             The current workspace bundles directory where locally generated bundles are stored.
+
 EOF
 fi
 cat <<EOF
@@ -126,7 +130,6 @@ EOF
    printSeeAlsoList "*bundle*" $EXECUTABLE
    exit
 fi
-
 
 #
 # Override the default cluster if -cluster is not specified.

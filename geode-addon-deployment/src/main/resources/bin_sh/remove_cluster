@@ -32,7 +32,8 @@ SYNOPSIS
    $EXECUTABLE -cluster cluster_name [-quiet] [-?]
 
 DESCRIPTION
-   Removes the specified cluster.
+   Removes the specified cluster. It prompts for confirmation. Specify the 'quiet' option
+   to suppress the confirmation prompt.
 
    -cluster cluster_name
              Unique cluster name. The cluster name is required.

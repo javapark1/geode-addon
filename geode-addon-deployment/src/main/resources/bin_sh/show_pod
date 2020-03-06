@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Display the pod status in the current geode-addon workspace
 
 SYNOPSIS
-   $EXECUTABLE [-pod <pod-name>] [-all] [-long] [-?]
+   $EXECUTABLE [-pod pod_name] [-all] [-long] [-?]
 
 DESCRIPTION
    Displays pod status.
@@ -45,6 +45,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -pod $POD
+
+FILES
+   $GEODE_ADDON_WORKSPACE/pods
+             The current workspace pods directory.
 
 EOF
 fi

@@ -26,7 +26,7 @@ NAME
 
 WARNING
    This command removes the entire app directory including the config and log files
-   only in the local file system.
+   only in the local file system. It will NOT remove the app remote VM hosts.
 
 SYNOPSIS
    $EXECUTABLE -app app_name [-quiet] [-?]

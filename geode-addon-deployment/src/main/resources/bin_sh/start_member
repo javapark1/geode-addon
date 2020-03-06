@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-cluster -num -fg -simulate -create-script -?"
+   echo "-cluster -num -fg -simulate -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Display member configuration information in the specified geode-addon cluster
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-num member_number] [-fg] [-simulate] [-create-script] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-num member_number] [-fg] [-simulate] [-?]
 
 DESCRIPTION
    Displays Geode member configuration information. The displayed
@@ -47,21 +47,7 @@ OPTIONS
              If specified then it only displays the member information
              and does not run the member.
 
-   -create-script
-             Generates a script file that can be sourced in to run with the 'start.sh' executable
-             included in the Geode distribution. If specified, it does not run the member. The
-             script file is generated in the following cluster directory.
 EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-             generated/
-EOF
-else
-cat <<EOF
-             $CLUSTER_DIR/generated/
-EOF
-fi
-
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT

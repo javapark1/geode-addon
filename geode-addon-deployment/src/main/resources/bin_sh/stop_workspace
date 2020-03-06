@@ -28,8 +28,8 @@ WORKSPACE
    $GEODE_ADDON_WORKSPACE
 
 NAME
-   $EXECUTABLE - Stop all running clusters and management centers in the specified
-                 geode-addon workspace
+   $EXECUTABLE - Stop all running Geode clusters including members and locaators 
+           in the specified workspace
 
 WARNING
    This command does not wait for migration operations to complete before
@@ -39,8 +39,8 @@ SYNOPSIS
    $EXECUTABLE [-workspace workspace_name | -all] [-?]
 
 DESCRIPTION
-   Stops all running Geode clusters by executing 'stop_cluster' on each
-   cluster in the workspace.
+   Stops all running Geode clusters by executing 'stop_cluster -all' on each cluster
+   in the workspace. Note that it kills both members and locators of all clusters.
 
 OPTIONS
    -workspace workspace_name

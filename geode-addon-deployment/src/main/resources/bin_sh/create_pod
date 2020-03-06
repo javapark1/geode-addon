@@ -143,6 +143,10 @@ cat <<EOF
 DEFAULT
    $EXECUTABLE -pod $POD -primary $NODE_NAME_PRIMARY -prefix $NODE_NAME_PREFIX
 
+FILES
+   $GEODE_ADDON_WORKSPACE/pods
+             The current workspace pods directory.
+
 SEE ALSO
 EOF
    printSeeAlsoList "*pod*" $EXECUTABLE

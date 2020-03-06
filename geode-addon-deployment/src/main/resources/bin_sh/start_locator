@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Start a locator in the specified cluster
 
 SYNOPSIS
-   $EXECUTABLE [-cluster cluster_name] [-num locator_number] [-simulate] [-create-script] [-?]
+   $EXECUTABLE [-cluster cluster_name] [-num locator_number] [-simulate] [-?]
 
 DESCRIPTION
    Starts a locator in the specified cluster.
@@ -40,17 +40,8 @@ OPTIONS
    -simulate
              If specified then it only displays the locator information
              and does not run the locator.
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-             generated/
-EOF
-else
-cat <<EOF
-             $CLUSTER_DIR/generated/
-EOF
-fi
 
+EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT

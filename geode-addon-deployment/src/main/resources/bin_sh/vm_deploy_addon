@@ -46,8 +46,6 @@ DESCRIPTION
    geode-addon installation directory path is defined by VM_GEODE_ADDON_HOME
    set in the workspace 'setenv.sh' file.
 
-   $GEODE_ADDON_WORKSPACE/setenv.sh
-
    Note that this command and all other commands that begin with the "vm_" preprefix are
    available only on VM workspaces.
 
@@ -75,6 +73,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER
+
+FILES
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+             The current workspace configuration file.
 EOF
 fi
 cat <<EOF

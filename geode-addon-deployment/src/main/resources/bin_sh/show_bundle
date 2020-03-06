@@ -63,6 +63,15 @@ EXAMPLES
 
    To view a remote bundle help (READEME.md) on the console:
       $EXECUTABLE -console bundle-jet-3.2-cluster-trade.tar.gz
+EOF
+if [ "$MAN_SPECIFIED" == "false" ]; then
+cat <<EOF
+FILES
+   $GEODE_ADDON_WORKSPACE/bundles
+             The current workspace bundles directory where locally generated bundles are stored.
+EOF
+fi
+cat <<EOF
 
 SEE ALSO
 EOF

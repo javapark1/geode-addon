@@ -53,6 +53,8 @@ DESCRIPTION
    overrides VM_HOSTS. 
 
 OPTIONS
+   -cluster cluster_name
+             Cluster name.
 
    -vm comma_separated_hosts
              A comma separated list of VM hosts or addresses. Spaces NOT allowed.
@@ -74,6 +76,13 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER bundle_file
+
+FILES
+   $GEODE_ADDON_WORKSPACE/setenv.sh
+             The current workspace configuration file.
+
+   $GEODE_ADDON_WORKSPACE/bundles
+             The current workspace bundles directory where locally generated bundles are stored.
 EOF
 fi
 cat <<EOF

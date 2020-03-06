@@ -47,6 +47,10 @@ cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER
 
+FILES
+   $CLUSTER_DIR/etc/cluster.properties
+             The current cluster configuration file.
+
 EOF
 fi
 cat <<EOF

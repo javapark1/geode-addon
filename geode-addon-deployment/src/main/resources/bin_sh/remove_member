@@ -34,19 +34,8 @@ DESCRIPTION
    number. Note that this command aborts if the specified member is running.
 
    For VM clusters, the member number reflects the host in the order it is
-   defined by the cluster property, 'vm.hosts', in the file shown below.
+   defined by the cluster property, 'vm.hosts', in the 'etc/cluster.properties' file.
    (Run 'show_cluster -long' to see the VM member numbers that map to hosts.)
-EOF
-if [ "$MAN_SPECIFIED" == "true" ]; then
-cat <<EOF
-   $CLUSTER_DIR/etc/cluster.properties
-EOF
-else
-cat <<EOF
-   etc/cluster.properties
-EOF
-fi
-cat <<EOF
 
 OPTIONS
    -cluster cluster_name
@@ -65,6 +54,10 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
 DEFAULT
    $EXECUTABLE -cluster $CLUSTER
+
+FILES
+   $CLUSTER_DIR/etc/cluster.properties
+             The current cluster configuration file.
 
 EOF
 fi

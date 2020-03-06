@@ -98,6 +98,10 @@ for i in $COMMANDS; do
          section="DEFAULT"
          echo ".SH $section" >> $MAN_FILE
          continue
+      elif [ "$line" == "FILES" ]; then
+         section="FILES"
+         echo ".SH $section" >> $MAN_FILE
+         continue
       elif [ "$line" == "EXAMPLES" ]; then
          section="EXAMPLES"
          echo ".SH $section" >> $MAN_FILE
