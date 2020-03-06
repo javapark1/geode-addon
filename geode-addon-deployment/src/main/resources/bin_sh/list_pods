@@ -19,13 +19,13 @@ if [ "$HELP" == "true" ]; then
 cat <<EOF
 
 NAME
-   $EXECUTABLE - List all pods in the current geode-addon workspace
+   $EXECUTABLE - List all the pods in the current geode-addon workspace
 
 SYNOPSIS
    $EXECUTABLE [-?]
 
 DESCRIPTION
-   Lists all pods in the current workspace.
+   Lists all the pods in the current workspace.
 
 DEFAULT
    $EXECUTABLE
@@ -59,12 +59,4 @@ if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
    exit 1
 fi
 
-echo ""
-echo "WORKSPACE"
-echo "   $GEODE_ADDON_WORKSPACE"
-echo ""
-echo "Pods:"
-echo "   $GEODE_ADDON_WORKSPACE/pods"
-echo ""
 ls $GEODE_ADDON_WORKSPACE/pods
-echo ""

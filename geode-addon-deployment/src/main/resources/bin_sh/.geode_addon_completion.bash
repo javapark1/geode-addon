@@ -154,6 +154,10 @@ __geode_addon_complete()
          else
             type_list=`ls $SCRIPT_DIR/cp_sub`
          fi
+      elif [ "$second_word" == "switch_root" ] || [ "$second_word" == "cd_root" ]; then
+            if [ $len -lt 4 ]; then
+               type_list=`list_roots`
+            fi
       elif [ "$second_word" == "switch_workspace" ] || [ "$second_word" == "cd_workspace" ]; then
             if [ $len -lt 4 ]; then
                type_list=`ls $GEODE_ADDON_WORKSPACES_HOME`
@@ -205,6 +209,22 @@ __geode_addon_complete()
       fi
    done
 
+
+   COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
+   return 0
+}
+
+__root_complete()
+{
+   local len cur_word type_list
+   len=${#COMP_WORDS[@]}
+   cur_word="${COMP_WORDS[COMP_CWORD]}"
+      
+   if [ $len -ge 3 ]; then
+     type_list=""
+   else
+      type_list=`list_roots`
+   fi
 
    COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
    return 0
@@ -445,6 +465,10 @@ done
 
 # Register geode_addon
 complete -F __geode_addon_complete -o bashdefault -o default geode_addon
+
+# Register switch_root, cd_root
+complete -F __root_complete -o bashdefault -o default switch_root
+complete -F __root_complete -o bashdefault -o default cd_root
 
 # Register switch_workspace, cd_workspace
 complete -F __workspaces_complete -o bashdefault -o default switch_workspace

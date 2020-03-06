@@ -19,13 +19,13 @@ if [ "$HELP" == "true" ]; then
 cat <<EOF
 
 NAME
-   $EXECUTABLE - List all clusters in the current geode-addon workspace
+   $EXECUTABLE - List all the clusters in the current geode-addon workspace
 
 SYNOPSIS
    $EXECUTABLE [-?]
 
 DESCRIPTION
-   Lists all clusters in the current workspace.
+   Lists all the clusters in the current workspace.
 
 DEFAULT
    $EXECUTABLE
@@ -59,12 +59,4 @@ if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
    exit 1
 fi
 
-echo ""
-echo "WORKSPACE"
-echo "   $GEODE_ADDON_WORKSPACE"
-echo ""
-echo "Clusters:"
-echo "   $GEODE_ADDON_WORKSPACE/clusters"
-echo ""
 ls $GEODE_ADDON_WORKSPACE/clusters
-echo ""

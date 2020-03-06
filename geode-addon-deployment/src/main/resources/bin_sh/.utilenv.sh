@@ -1347,6 +1347,59 @@ function getPrivateNetworkAddresses
 }
 
 # 
+# Switches to the specified root environment. This function is provided
+# to be executed in the shell along with other geode-addon commands. It
+# sets the environment variables in the parent shell.
+#
+# @required GEODE_ADDON_WORKSPACES_HOME Workspaces directory path.
+# @param    rootName   Optional root name.
+#
+function switch_root
+{
+   EXECUTABLE=switch_root
+   if [ "$1" == "-?" ]; then
+      echo "NAME"
+      echo "   $EXECUTABLE - Switch to the specified root workspaces environment"
+      echo ""
+      echo "SYNOPSIS"
+      echo "   $EXECUTABLE [root_name] [-?]"
+      echo ""
+      echo "DESCRIPTION"
+      echo "   Switches to the specified root workspaces environment."
+      echo ""
+      echo "OPTIONS"
+      echo "   root_name"
+      echo "             Name of the root environment. If not specified, then switches"
+      echo "             to the current root environment."
+      echo ""
+      echo "DEFAULT"
+      echo "   $EXECUTABLE"
+      echo ""
+      echo "SEE ALSO"
+      printSeeAlsoList "*root*" $EXECUTABLE
+      return
+   elif [ "$1" == "-options" ]; then
+      echo "-?"
+      return
+   fi
+
+   if [ "$1" == "" ]; then
+      . $GEODE_ADDON_WORKSPACES_HOME/initenv.sh -quiet
+   else
+      local PARENT_DIR="$(dirname "$GEODE_ADDON_WORKSPACES_HOME")"
+      if [ ! -d "$PARENT_DIR/$1" ]; then
+         echo >&2 "ERROR: Invalid root name. Root name does not exist. Command aborted."
+	 return 1
+      fi
+      if [ ! -d "$PARENT_DIR/$1/clusters/$CLUSTER" ]; then
+         export CLUSTER=""
+      fi
+      . $PARENT_DIR/$1/initenv.sh -quiet
+   fi
+   cd_root $1
+}
+
+# 
 # Switches the workspace to the specified workspace. This function is provided
 # to be executed in the shell along with other geode-addon commands. It
 # sets the environment variables in the parent shell.
@@ -1445,6 +1498,57 @@ function switch_cluster
       export CLUSTER=$1
    fi
    cd_cluster $CLUSTER
+}
+
+#
+# Changes directory to the specified root directory. This function is provided
+# to be executed in the shell along with other geode-addon commands. It changes
+# directory in the parent shell.
+#
+# @required GEODE_ADDON_WORKSPACES_HOME Workspaces directory path.
+# @param    rootName   Optional root name.
+#
+function cd_root
+{
+   EXECUTABLE=cd_root
+   if [ "$1" == "-?" ]; then
+      echo "NAME"
+      echo "   $EXECUTABLE - Change directory to the specified root environment"
+      echo ""
+      echo "SYNOPSIS"
+      echo "   $EXECUTABLE [root_name] [-?]"
+      echo ""
+      echo "DESCRIPTION"
+      echo "   Changes directory to the specified root environment."
+      echo ""
+      echo "OPTIONS"
+      echo "   root_name"
+      echo "             Root environment name. If not specified then changes to the"
+      echo "             current root environment directory."
+      echo ""
+      echo "DEFAULT"
+      echo "   $EXECUTABLE"
+      echo ""
+      echo "SEE ALSO"
+      printSeeAlsoList "*root*" $EXECUTABLE
+      return
+   elif [ "$1" == "-options" ]; then
+      echo "-?"
+      return
+   fi
+
+   if [ "$1" == "" ]; then
+      cd $GEODE_ADDON_WORKSPACES_HOME
+   else
+      local PARENT_DIR="$(dirname "$GEODE_ADDON_WORKSPACES_HOME")"
+      if [ ! -d "$PARENT_DIR/$1" ]; then
+         echo >&2 "ERROR: Invalid root name. Root name does not exist. Command aborted."
+	 return 1
+      else
+         cd $PARENT_DIR/$1
+      fi
+   fi
+   pwd
 }
 
 #

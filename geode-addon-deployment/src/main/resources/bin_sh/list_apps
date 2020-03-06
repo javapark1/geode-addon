@@ -19,13 +19,13 @@ if [ "$HELP" == "true" ]; then
 cat <<EOF
 
 NAME
-   $EXECUTABLE - List all apps in the current geode-addon workspace
+   $EXECUTABLE - List all the apps in the current geode-addon workspace
 
 SYNOPSIS
    $EXECUTABLE [-?]
 
 DESCRIPTION
-   Lists all apps in the current workspace.
+   Lists all the apps in the current workspace.
 
 DEFAULT
    $EXECUTABLE
@@ -59,12 +59,4 @@ if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
    exit 1
 fi
 
-echo ""
-echo "WORKSPACE"
-echo "   $GEODE_ADDON_WORKSPACE"
-echo ""
-echo "Apps:"
-echo "   $GEODE_ADDON_WORKSPACE/apps"
-echo ""
 ls $GEODE_ADDON_WORKSPACE/apps
-echo ""

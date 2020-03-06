@@ -19,13 +19,13 @@ if [ "$HELP" == "true" ]; then
 cat <<EOF
 
 NAME
-   $EXECUTABLE - List all workspaces in the current geode-addon workspaces environment
+   $EXECUTABLE - List all the workspaces in the current geode-addon workspaces environment
 
 SYNOPSIS
    $EXECUTABLE [-tree] [-?]
 
 DESCRIPTION
-   Lists all workspaces. If the '-tree' option is present then it list all
+   Lists all the workspaces. If the '-tree' option is present then it lists all
    workspaces and their constituents along with version information in a tree view.
 
 OPTIONS
@@ -54,13 +54,8 @@ if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME" ]; then
 fi
 
 if [ "$TREE" == "false" ]; then
-echo ""
-echo "Workspaces Home:"
-echo "   $GEODE_ADDON_WORKSPACES_HOME"
-echo ""
 WORKSPACES=`ls $GEODE_ADDON_WORKSPACES_HOME`
 removeTokens "$WORKSPACES" "initenv.sh setenv.sh"
-echo ""
 
 else
 
