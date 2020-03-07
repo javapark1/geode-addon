@@ -1,5 +1,7 @@
 # Apache Geode/Pivotal GemFire Addon Distribution
 
+**Go to [Quick Start](#Quick-Start)**
+
 ## Introduction
 
 `geode-addon` greatly simplifies your Geode/GemFire environment by allowing you to create workspaces on just about any hardware with Linux/Unix or Windows OS installed. You can think of a workspace as a sandbox in which you can safely make changes to Geode/GemFire clusters and apps without affecting other workspaces. A workspace may have one or more clusters and apps that are separately configured and readily runnable. You can have any number of workspaces, each with different versions of Geode/GemFire or apps, running different use cases with tailored configurations to run on your laptop, remote VMs, Kubernetes and Docker clusters. You can, for example, create a workspace that federates multiple Geode/GemFire clusters serving inventory and sales data, a workspace that handles streamed data into the federated clusters via Spark, and yet another workspace that integrates data analytics tools for performing AI/ML operations. 
@@ -34,6 +36,8 @@ install_bundle -download bundle-geode-1.11.0-cluster-app-mysql-perf_test_mysql.t
 In addition to `geode-addon`, `hazelcast-addon` is also available for Hazelcast users. If you are looking for a way to compare Geode/GemFire and Hazelcast, check out the [`perf_test`](geode-addon-deployment/src/main/resources/apps/perf_test) app in both addons.
 
 [https://github.com/javapark1/hazelcast-addon](https://github.com/javapark1/hazelcast-addon)
+
+:exclamation: *Both addons have been integrated such that you can seamlessly switch between workspaces running on Geode, GemFire, Hazelcast, and Jet. See [Root Workspaces Environments (RWEs)](#Root-Workspaces-Environments-RWEs) for details.*
 
 ## Quick Start
 
@@ -176,7 +180,9 @@ geode-addon_0.9.0-SNAPSHOT
 ├── apps
 ├── bin_sh
 ├── clusters
+├── docker
 ├── etc
+├── k8s
 ├── lib
 ├── plugins
 └── pods
@@ -291,19 +297,20 @@ This hidden file sets the `GEODE_ADDON_WORKSPACE` environment variable to the wo
 
 ```console
 geode_addon <tab><tab>
--version            create_bundle       list_apps           show_bundle         stop_member
-add_locator         create_cluster      list_clusters       show_cluster        stop_pod
-add_member          create_docker       list_pods           show_log            stop_workspace
-add_node            create_k8s          list_workspaces     show_pod            switch_cluster
-build_pod           create_pod          pwd_cluster         show_workspace      switch_workspace
-cd_app              create_script       pwd_workspace       shutdown_cluster    vm_copy
-cd_cluster          create_workspace    remove_app          shutdown_workspace  vm_deploy_addon
-cd_docker           init_geode_addon    remove_cluster      start_cluster       vm_deploy_bundle
-cd_k8s              install_bundle      remove_locator      start_locator       vm_download
-cd_pod              kill_cluster        remove_member       start_member        vm_exec
-cd_workspace        kill_locator        remove_node         start_pod           vm_install
-clean_cluster       kill_member         remove_pod          stop_cluster        vm_sync
-create_app          kill_workspace      remove_workspace    stop_locator        vm_test
+-version            create_bundle       list_pods           show_cluster        stop_workspace
+add_locator         create_cluster      list_roots          show_log            switch_cluster
+add_member          create_docker       list_workspaces     show_pod            switch_root
+add_node            create_k8s          pwd_cluster         show_workspace      switch_workspace
+build_pod           create_pod          pwd_root            shutdown_cluster    vm_copy
+cd_app              create_workspace    pwd_workspace       shutdown_workspace  vm_deploy_addon
+cd_cluster          init_geode_addon    remove_app          start_cluster       vm_deploy_bundle
+cd_docker           install_bundle      remove_cluster      start_locator       vm_download
+cd_k8s              kill_cluster        remove_locator      start_member        vm_exec
+cd_pod              kill_locator        remove_member       start_pod           vm_install
+cd_root             kill_member         remove_node         stop_cluster        vm_sync
+cd_workspace        kill_workspace      remove_pod          stop_locator        vm_test
+clean_cluster       list_apps           remove_workspace    stop_member
+create_app          list_clusters       show_bundle         stop_pod
 ```
 
 :exclamation: There is a well-known bash auto-completion bug in macOS that prepends a backslash if you hit the tab key followed by an environment variable. If this happens to you then a workaround is to add the following command in `.bashrc` or `.bash_profile`. *Note that this is a macOS bash bug and is NOT contributed by `geode-addon`.*
@@ -553,6 +560,16 @@ install_bundle -?
 ```
 
 [Go To `geode-addon-bundles`](https://github.com/javapark1/geode-addon-bundles)
+
+## Root Workspaces Environments (RWEs)
+
+When you initialized the addon environment by executing the `init_geode_addon` command, you have effectively created a *root workspaces environment (RWE)* in the parent directory of the workspaces home path you specified. If you initialize another workspaces environment by executing the `init_geode_addon` command once again under the same parent directory then you would have two (2) RWEs. You can create as many RWEs as you want under the same parent directory but why would you want to do that?
+
+Having multiple RWEs may help you organize and preserve workspaces configured for your specific needs. You are most likely to have more than one RWE configured to run on your local machine perhaps to separate different versions of Geode, Docker instances on Hyper-V from Virtual Box, Minikube from GKE, QA from production applications, and etc. For example, you could have an RWE made strictly for running Docker applications which only works with Windows Hyper-V. In addition to RWEs configured for local machine, you could have RWEs with workspaces targeting dedicated static on-prem VMs and RWEs targeting cloud VMs that are dynamic in nature. Furthermore, you could be running multiple RWEs that separately host Geode, GemFire, Hazelcast, and Jet.
+
+As you can see, having multiple RWEs can help you in many ways but how do you manage so many RWEs? First, with `geode-addon`, navigating RWEs is much like navigating workspaces.  You list all the RWEs by executing the `list_roots` command and switch between RWEs by executing the `switch_root` command. You can view the RWE details by executing `list_workspaces -tree` which displays all the workspaces and their constituents in a tree view. 
+
+Furthermore, the `switch_root` command has been integrated with both `geode-addon` and `hazelcast-addon`, allowing you to switch between RWEs disjointly initialized with `init_hzaddon` and `init_geode_addon`. This means you can have workspaces made up of Geode, GemFire, Hazelcast, and Jet managed under a single set of commands. For example, the `start_cluster` command will start Geode and Hazelcast, the `stop_cluster` command will stop Geode and Hazelcast, and the `create_k8s` command will create a Kubernetes environment for Geode and Hazelcast. You switch between RWEs and execute the same commands.
 
 ## CLASSPATH
 
