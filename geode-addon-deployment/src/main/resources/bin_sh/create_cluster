@@ -46,17 +46,17 @@ OPTIONS
              Default: local
 
    -vm comma_separated_hosts
-             A list of VM hosts or addresses separated by comma.
-             Spaces are NOT allowed. If this option is not specified, then the
-             host list defined by VM_HOSTS in the workspace 'setenv.sh' file 
-             is applied.
+             A list of VM hosts or addresses separated by comma. If the list
+             contains spaces then enclosed it in quotes. If this option is not
+             specified, then the host list defined by VM_HOSTS in the workspace
+             'setenv.sh' file is applied.
 
    -locator comma_separated_locator_hosts
-             A list of locator hosts or addresses separated by comma.
-             Spaces are NOT allowed. This option is meaningful only
-             if the '-vm' option is specified. If this option is not
-             specified but the '-vm' option is specified, then the first
-             host from the '-vm' host list is selected for the locator.
+             A list of locator hosts or addresses separated by comma. If the list
+             contains spaces then enclosed it in quotes. This option is meaningful
+             only if the '-vm' option is specified. If this option is not specified
+             but the '-vm' option is specified, then the first host from the '-vm'
+             host list is selected for the locator.
 
    -port first_locator_port_number
              First locator's port number. Port number is incremented

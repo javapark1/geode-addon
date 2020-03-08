@@ -29,7 +29,7 @@ SYNOPSIS
                [-cluster default_cluster]
                [-java local_JAVA_HOME]
                [-geode local_geode_or_gemfire_path]
-               [-vm vm_comma_separated_host_names_with_no_spaces]
+               [-vm comma_separated_host_names]
                [-vm-java vm_JAVA_HOME]
                [-vm-geode vm_geode_or_gemfire_path]
                [-vm-addon vm_geode_addon_path]
@@ -81,18 +81,18 @@ EOF
 fi
 cat <<EOF
 
-   -vm vm_comma_separated_host_names_with_no_spaces
-              A comma separated list of VM host names (or IP addresses). Spaces in the list are
-              NOT allowed. Note that this option enables VMs. If it is not specified then all other
-              '-vm-' opstions are still recorded but the workspace will not be VM enabled and
-              clusters will be locally instead.
+   -vm comma_separated_host_names
+              A comma separated list of VM host names (or IP addresses). If the list contains
+              spaces then enclosed it in quotes. Note that this option enables VMs. If it is
+              not specified then all other '-vm-' options are still recorded but the workspace
+              will not be VM enabled and all clusters will be locally created instead.
    
    -vm-java vm_JAVA_HOME
               VM JAVA_HOME path. If the VMs do not have Java installed in this path, then
               you can install it by executing 'vm_install' after the workspace has locally
               been created.
 
-   -vm-geode t vm_geode_or_gemfire_path
+   -vm-geode vm_geode_or_gemfire_path
               VM Geode or GemFire home path. If the VMs do not have Geode or GemFire installed
               in this path, then you can install it by executing 'vm_install' after the workspace
               has locally been created.
@@ -116,9 +116,9 @@ cat <<EOF
               and deployed to the VMs when you execute 'vm_sync' later.
 
    -quiet
-             Quiet mode. Supresses the interactive prompts. The options not specified will
-             default to their default values. You can change the option values in the workspace's
-             'setenv.sh' file as needed after the workspace is created.
+              Quiet mode. Supresses the interactive prompts. The options not specified will
+              default to their default values. You can change the option values in the workspace's
+              'setenv.sh' file as needed after the workspace is created.
 
 DEFAULT
    $EXECUTABLE
@@ -131,18 +131,18 @@ fi
 
 if [ "$GEODE_ADDON_WORKSPACES_HOME" == "" ] || [ ! -d $GEODE_ADDON_WORKSPACES_HOME ]; then
    if [ "$WORKSPACE_DIR" == "" ]; then
-      echo "----------------------------------------------------------------"
-      echo "ERROR: Workspace directory path not specified. Command aborted."
-      echo "----------------------------------------------------------------"
+      echo >&2 "----------------------------------------------------------------"
+      echo >&2 "ERROR: Workspace directory path not specified. Command aborted."
+      echo >&2 "----------------------------------------------------------------"
       exit 1
    fi
 fi
 
 if [ "$JAVA_HOME_ARG" == "" ]; then
-   JAVA_HOME_ARG=$JAVA_HOME
+   JAVA_HOME_ARG="$JAVA_HOME"
 fi
 if [ "$GEODE_ARG" == "" ]; then
-   GEODE_ARG=$GEODE_HOME
+   GEODE_ARG="$GEODE_HOME"
 fi
 
 # Default cluster
@@ -155,7 +155,24 @@ VM_ENABLED=$VM_SPECIFIED
 
 if [ "$QUIET" == "true" ]; then
    WORKSPACE=$NAME_ARG
+   if [ "$WORKSPACE" == "" ]; then
+      echo >&2 "ERROR: Workspace name not specified. Use the '-name' option to set the workspace name."
+      echo >&2 "       Command aborted."
+      exit 1
+   fi
+
    WORKSPACE_DIR=$GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE
+   if [ -d "$WORKSPACE_DIR" ]; then
+      echo >&2 "ERROR: Workspace already exists [$WORKSPACE]. Command aborted."
+      exit
+   fi
+   if [ -f "$WORKSPACE_DIR" ]; then
+      echo >&2 "ERROR: A file with the sanem workspace name exists in the RWE parent directory."
+      echo >&2 "       [$WORKSPACE_DIR]"
+      echo >&2 "       Please remove the file and try again. Command aborted."
+      exit 1
+   fi
+
    if [ "$GEODE_ARG" != "" ]; then
       if [ "$CLUSTER" == "" ]; then
          CLUSTER=$DEFAULT_CLUSTER
@@ -220,7 +237,9 @@ else
    VM_GEODE_ADDON_HOME=""
    VM_GEODE_ADDON_WORKSPACES_HOME=""
    VM_GEODE_ADDON_WORKSPACE=""
-   VM_HOSTS=""
+   if [ "$VM_HOSTS_ARG" != "" ]; then
+      VM_HOSTS="$VM_HOSTS_ARG"
+   fi
    VM_USER=""
    VM_PRIVATE_KEY_FILE=""
    REDO=true
@@ -546,9 +565,9 @@ if [ "$VM_ENABLED" == "true" ]; then
    echo "VM_JAVA_HOME=\"$VM_JAVA_HOME\"" >> $WORKSPACE_DIR/setenv.sh
    echo "# VM Geode home directory path." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_HOME=\"$VM_GEODE_HOME\"" >> $WORKSPACE_DIR/setenv.sh
-   echo "# VM hosts may have a different geode-addon home path." >> $WORKSPACE_DIR/setenv.sh
+   echo "# VM hosts may have the geode-addon home path different from the local path." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_HOME=\"$VM_GEODE_ADDON_HOME\"" >> $WORKSPACE_DIR/setenv.sh
-   echo "# VM hosts may have a different workspaces and workspace paths." >> $WORKSPACE_DIR/setenv.sh
+   echo "# VM hosts may have the workspaces and workspace paths from the local paths." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_WORKSPACES_HOME=\"$VM_GEODE_ADDON_WORKSPACES_HOME\"" >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_WORKSPACE=\"\$VM_GEODE_ADDON_WORKSPACES_HOME/$WORKSPACE\"" >> $WORKSPACE_DIR/setenv.sh
    if [ "$__VM_PRIVATE_KEY_FILE" != "" ]; then
@@ -561,9 +580,9 @@ else
    echo "VM_JAVA_HOME=\$VM_JAVA_HOME" >> $WORKSPACE_DIR/setenv.sh
    echo "# VM Geode home directory path." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_HOME=\$GEODE_HOME" >> $WORKSPACE_DIR/setenv.sh
-   echo "# VM hosts may have a different geode-addon home path." >> $WORKSPACE_DIR/setenv.sh
+   echo "# VM hosts may have the geode-addon home path from the local path." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_HOME=\$GEODE_ADDON_HOME" >> $WORKSPACE_DIR/setenv.sh
-   echo "# VM hosts may have a different workspace path." >> $WORKSPACE_DIR/setenv.sh
+   echo "# VM hosts may have the workspaces and workspace paths from the local paths." >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_WORKSPACES_HOME=\$GEODE_ADDON_WORKSPACES_HOME" >> $WORKSPACE_DIR/setenv.sh
    echo "VM_GEODE_ADDON_WORKSPACE=\$GEODE_ADDON_WORKSPACE" >> $WORKSPACE_DIR/setenv.sh
    echo "VM_PRIVATE_KEY_FILE=\"\"" >> $WORKSPACE_DIR/setenv.sh

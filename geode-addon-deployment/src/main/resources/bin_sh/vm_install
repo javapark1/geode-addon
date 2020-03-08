@@ -55,7 +55,8 @@ OPTIONS
              Cluster name.
 
    -vm comma_separated_hosts
-              A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+              A comma separated list of VM hosts or addresses. If the list contains spaces
+             then enclosed it in quotes.
 
    -java java_distribution_file
               JDK distribution file, e.g. jdk-8u212-linux-x64.tar.gz

@@ -267,7 +267,7 @@ MAX_MEMBER_COUNT=20
 # Source in .argenv.sh to set all default variables. This call is required.
 # IMPORTANT: Do NOT remove this call.
 # -------------------------------------------------------------------------------
-. $SCRIPT_DIR/.argenv.sh $*
+. $SCRIPT_DIR/.argenv.sh "$@"
 
 # -----------------------------------------------------
 # IMPORTANT: Do NOT modify below this line

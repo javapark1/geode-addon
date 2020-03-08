@@ -64,7 +64,8 @@ OPTIONS
              Cluster name.
 
    -vm comma_separated_hosts
-             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
+             A comma separated list of VM hosts or addresses. If the list contains spaces
+             then enclosed it in quotes.
 
    -mirror
              If this option is specified, then the absolute path of the specified

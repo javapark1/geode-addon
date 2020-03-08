@@ -55,8 +55,9 @@ OPTIONS
              Cluster name.
 
    -vm comma_separated_hosts
-             A comma separated list of VM hosts or addresses. Spaces NOT allowed.
-             This option overrides the workspace's VM_HOSTS set in the 'setenv.sh' file.
+             A comma separated list of VM hosts or addresses. If the list contains spaces
+             then enclosed it in quotes. This option overrides the workspace's VM_HOSTS
+             set in the 'setenv.sh' file.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then

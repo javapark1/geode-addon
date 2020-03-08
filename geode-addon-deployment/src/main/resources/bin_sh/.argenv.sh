@@ -100,7 +100,7 @@ PM=
 NM=
 PREV=
 
-for i in $*
+for i in "$@"
 do
    if [ "$PREV" == "-workspace" ]; then
       WORKSPACE_ARG=$i

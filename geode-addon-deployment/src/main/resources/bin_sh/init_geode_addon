@@ -144,6 +144,15 @@ if [ "$QUIET" == "true" ]; then
        echo "       Command aborted."
        exit 1
    fi
+   if [ "$JAVA_HOME_ARG" != "" ]; then
+      JAVA_HOME="$JAVA_HOME_ARG"
+   fi
+   if [ "$IMDG_ARG" != "" ]; then
+     GEODE_HOME="$IMDG_ARG"
+   fi
+   if [ "$WORKSPACE_ARG" != "" ]; then
+      WORKSPACE="$WORKSPACE_ARG"
+   fi
 else
    echo ""
    echo "Please answer the prompts that appear below. If you are not able to complete"
@@ -214,8 +223,9 @@ else
             __JAVA_HOME=$(cygpath -au "$__JAVA_HOME")
          fi
          __JAVA_HOME=$(trimString "$__JAVA_HOME")
+#	 __JAVA_HOME=$(printf '%q' "$__JAVA_HOME=AFILE")
 
-         if [ ! -d "$__JAVA_HOME" ]; then
+         if [[ ! -d "$__JAVA_HOME" ]]; then
             echo "Directory does not exist or not a directory."
             __JAVA_HOME=$JAVA_HOME_ARG
             __REDO=true
@@ -246,7 +256,7 @@ else
          if [[ $OS_NAME == CYGWIN* ]]; then
             __GEODE_HOME="$(cygpath -au $__GEODE_HOME)"
          fi
-         if [ ! -d "$__GEODE_HOME" ]; then
+         if [[ ! -d "$__GEODE_HOME" ]]; then
             echo "Directory does not exist or not a directory. Do you want to skip?"
             __REDO=true
             INNER_LOOP=true
@@ -408,21 +418,10 @@ echo "export GEODE_ADDON_VERSION=$GEODE_ADDON_VERSION" >> $WORKSPACES_HOME/.addo
 echo "export GEODE_ADDON_WORKSPACES_HOME_CREATION_DATE=\"`date "+%m/%d/%y %H:%M:%S %Z"`\"" >> $WORKSPACES_HOME/.addonenv.sh
 echo "export GEODE_ADDON_WORKSPACES_HOME=\"$GEODE_ADDON_WORKSPACES_HOME\"" >> $WORKSPACES_HOME/.addonenv.sh
 
-#
-# Switch workspace and create cluster
-#
-export CLUSTER
-$SCRIPT_DIR/switch_workspace
-# Skip creating the cluster if it matches the default cluster name.
-# The default cluster is created by create_workspace executed previously.
-if [ "$CLUSTER" != "$DEFAULT_CLUSTER" ]; then
-   if [ "$VM_ENABLED" == "true" ]; then
-      $SCRIPT_DIR/create_cluster -cluster $CLUSTER -vm
-   else
-      $SCRIPT_DIR/create_cluster -cluster $CLUSTER
-   fi
-fi
 
+#
+# Report RWE (Root Workspaces Environement) summary
+#
 echo "geode-addon workspaces initialized:"
 echo "   $WORKSPACES_HOME"
 echo ""
@@ -445,7 +444,6 @@ if [ "$JAVA_HOME" == "" ] || [ "$GEODE_HOME" == "" ]; then
    if  [ "$GEODE_HOME" == "" ]; then
       echo "   GEODE_HOME"
    fi
-   echo ""
 fi
 
 # Display workspace and cluster info.
