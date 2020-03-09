@@ -3,9 +3,8 @@ SCRIPT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 . $SCRIPT_DIR/setenv.sh
 
 #
-# IMPORTANT: Do NOT modify the following.
+# IMPORTANT: Do NOT modify this file.
 #
-. $GEODE_ADDON_HOME/bin_sh/.geode_addon_completion.bash
 
 #
 #  Set the default environment variable for this RWE.
@@ -53,6 +52,11 @@ for ((i = 0; i < ${#__PATHS[@]}; i++)); do
 done
 export GEODE_ADDON_PATH="${GEODE_ADDON_PATH::-1}"
 export PATH=$GEODE_ADDON_PATH:$CLEANED_PATH
+
+#
+# Initialize auto completion
+#
+. $GEODE_ADDON_HOME/bin_sh/.geode_addon_completion.bash
 
 #
 # Display initialization info
