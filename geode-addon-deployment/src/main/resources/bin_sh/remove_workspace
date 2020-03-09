@@ -249,10 +249,26 @@ if [ "$VM_ENABLED" == "true" ] && [ "$LOCAL" != "true" ]; then
    done
 fi
 echo "   Removing local workspace..."
+CURRENT_DIR=""
 if [ "$SIMULATE" == "true" ]; then
    echo rm -rf $WORKSPACE_DIR
 else
+   CURRENT_DIR=`pwd`	
    rm -rf $WORKSPACE_DIR
+   retrieveDefaultEnv
+   DEFAULT_WORKSPACE="$(basename "$CURRENT_GEODE_ADDON_WORKSPACE")"
+   if [ "$WORKSPACE" == "$DEFAULT_WORKSPACE" ]; then
+      __WORKSPACES=$(list_workspaces)
+      __WORKSPACE=""
+      for i in $__WORKSPACES; do
+         __WORKSPACE=$i
+         break;
+      done
+      if [ "$__WORKSPACE" != "" ]; then
+         GEODE_ADDON_WORKSPACE="$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE"
+         updateDefaultEnv
+      fi
+   fi
 fi
 
 # Display summary
@@ -276,3 +292,8 @@ else
    echo "             Backup: $WORKSPACE_ARCHIVE_FILE"
 fi
 echo "----------------------------------------------------------------"
+
+if [ "$CURRENT_DIR" != "" ] && [ ! -d "$CURRENT_DIR" ]; then
+   echo "You are currently in the removed directory."
+   echo "Please change directory to a valid directory before executing any commands."
+fi

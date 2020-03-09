@@ -1346,6 +1346,32 @@ function getPrivateNetworkAddresses
    echo $__PRIVATE_IP_ADDRESSES
 }
 
+#
+# Updates the default workspaces envionment variables with the current values 
+# in the .rwe/defaultenv.sh file.
+#
+function updateDefaultEnv
+{
+   local RWE_DIR="$GEODE_ADDON_WORKSPACES_HOME/.rwe"
+   local DEFAULTENV_FILE="$RWE_DIR/defaultenv.sh"
+   if [ ! -d "$RWE_DIR" ]; then
+      mkdir "$RWE_DIR"
+   fi
+   echo "export GEODE_ADDON_WORKSPACE=\"$GEODE_ADDON_WORKSPACE\"" > $DEFAULTENV_FILE
+}
+
+#
+# Retrieves the default environment variables set in the .rwe/defaultenv.sh file.
+#
+function retrieveDefaultEnv
+{
+   local RWE_DIR="$GEODE_ADDON_WORKSPACES_HOME/.rwe"
+   local DEFAULTENV_FILE="$RWE_DIR/defaultenv.sh"
+   if [ -f "$DEFAULTENV_FILE" ]; then
+      . "$DEFAULTENV_FILE"
+   fi
+}
+
 # 
 # Switches to the specified root environment. This function is provided
 # to be executed in the shell along with other geode-addon commands. It
@@ -1440,6 +1466,22 @@ function switch_workspace
    fi
 
    if [ "$1" == "" ]; then
+      if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
+         retrieveDefaultEnv
+      fi
+      if [ ! -d "$GEODE_ADDON_WORKSPACE" ]; then
+         __WORKSPACES=$(list_workspaces)
+	 for i in $__WORKSPACES; do
+            __WORKSPACE=$i
+	    break;
+         done
+	 if [ "$__WORKSPACE" == "" ]; then
+            echo >&2 "ERROR: Workspace does not exist. Command aborted."
+	    return 1
+	 fi
+         GEODE_ADDON_WORKSPACE="$GEODE_ADDON_WORKSPACES_HOME/$__WORKSPACE"
+         updateDefaultEnv
+      fi
       . $GEODE_ADDON_WORKSPACE/initenv.sh -quiet
    else
       if [ ! -d "$GEODE_ADDON_WORKSPACES_HOME/$1" ]; then

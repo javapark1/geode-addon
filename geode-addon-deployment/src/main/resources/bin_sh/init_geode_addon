@@ -392,19 +392,13 @@ echo "export GEODE_HOME=\"$GEODE_HOME\"" >> $WORKSPACES_HOME/setenv.sh
 echo "export GEODE_ADDON_HOME=\"$BASE_DIR\"" >> $WORKSPACES_HOME/setenv.sh
 echo "" >> $WORKSPACES_HOME/setenv.sh
 echo "#" >> $WORKSPACES_HOME/setenv.sh
-echo "# Set the default workspace name. This workspace is used if the GEODE_ADDON_WORKSPACE" >> $WORKSPACES_HOME/setenv.sh
-echo "# environment variable is not set." >> $WORKSPACES_HOME/setenv.sh
-echo "#" >> $WORKSPACES_HOME/setenv.sh
-echo "export GEODE_ADDON_WORKSPACE=\"$GEODE_ADDON_WORKSPACE\"" >> $WORKSPACES_HOME/setenv.sh
-echo "" >> $WORKSPACES_HOME/setenv.sh
-echo "#" >> $WORKSPACES_HOME/setenv.sh
 echo "# Add your workspaces-wide environment variables in this file. The environment" >> $WORKSPACES_HOME/setenv.sh
 echo "# variables set in this file are used for all workspaces running under this" >> $WORKSPACES_HOME/setenv.sh
 echo "# directory. Workspace specifics should be added in <workspace>/setenv.sh." >> $WORKSPACES_HOME/setenv.sh
 echo "#" >> $WORKSPACES_HOME/setenv.sh
 
 #
-# Copyt initenv.sh
+# Copy initenv.sh
 #
 cp $BASE_DIR/etc/init/initenv.sh $WORKSPACES_HOME
 

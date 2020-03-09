@@ -74,6 +74,7 @@ else
 fi
 
 # Remove the app in the local file system
+CURRENT_DIR=`pwd`
 rm -rf $APP_DIR
 
 echo "----------------------------------------------------------------"
@@ -81,3 +82,8 @@ echo "  WORKSPACE: $GEODE_ADDON_WORKSPACE"
 echo "App Removed: $APP"
 echo "    APP_DIR: $APP_DIR"
 echo "----------------------------------------------------------------"
+
+if [ "$CURRENT_DIR" != "" ] && [ ! -d "$CURRENT_DIR" ]; then
+   echo "You are currently in the removed directory."
+   echo "Please change directory to a valid directory before executing any commands."
+fi

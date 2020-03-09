@@ -239,6 +239,7 @@ if [ "$VM_ENABLED" == "true" ]; then
 fi
 
 # Remove the cluster in local VM
+CURRENT_DIR=`pwd`
 rm -rf $CLUSTER_DIR
 
 echo "----------------------------------------------------------------"
@@ -252,3 +253,8 @@ echo "     CONFIG_DIR: $ETC_DIR"
 echo "    CONFIG_FILE: $CONFIG_FILE"
 echo "        LOG_DIR: $LOG_DIR"
 echo "----------------------------------------------------------------"
+
+if [ "$CURRENT_DIR" != "" ] && [ ! -d "$CURRENT_DIR" ]; then
+   echo "You are currently in the removed directory."
+   echo "Please change directory to a valid directory before executing any commands."
+fi

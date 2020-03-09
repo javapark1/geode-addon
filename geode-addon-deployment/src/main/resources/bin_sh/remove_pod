@@ -110,6 +110,7 @@ popd > /dev/null 2>&1
 # Make a backup bundle
 $SCRIPT_DIR/create_bundle -pod $POD
 
+CURRENT_DIR=`pwd`
 rm -rf $POD_DIR
 
 echo "----------------------------------------------------------------"
@@ -117,3 +118,8 @@ echo "  WORKSPACE: $GEODE_ADDON_WORKSPACE"
 echo "Pod Removed: $POD"
 echo "    POD_DIR: $POD_DIR"
 echo "----------------------------------------------------------------"
+
+if [ "$CURRENT_DIR" != "" ] && [ ! -d "$CURRENT_DIR" ]; then
+   echo "You are currently in the removed directory."
+   echo "Please change directory to a valid directory before executing any commands."
+fi
