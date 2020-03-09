@@ -655,7 +655,7 @@ else
    $SCRIPT_DIR/create_cluster -cluster $CLUSTER
 fi
 
-# Update the defaultenv.sh file if this is the sole workspace
+# Update the defaultenv.sh file if this is the only workspace that exists
 if [ "$(list_workspaces)" == "$WORKSPACE" ]; then
    updateDefaultEnv
 fi

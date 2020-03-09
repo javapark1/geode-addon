@@ -140,8 +140,8 @@ else
    if [[ ${OS_NAME} == DARWIN* ]]; then
       open "$BROWSER_URL"
       URL=$BROWSER_URL
-   elif [[ ${OS_NAME} == CYGWIN* ]]; then
-      cmd /c start "" "$BROWSER_URL"
+   elif [[ ${OS_NAME} == CYGWIN* ]] || [ "$(which cmd.exe)" != "" ]; then
+      cmd.exe /c start "" "$BROWSER_URL"
       URL=$BROWSER_URL
    else
       curl $RAW_FILE_URL
