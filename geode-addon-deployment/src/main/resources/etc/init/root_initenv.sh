@@ -7,6 +7,15 @@ SCRIPT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 #
 
 #
+#  Set the default environment variable for this RWE.
+#
+RWE_DIR="$GEODE_ADDON_WORKSPACES_HOME/.rwe"
+DEFAULTENV_FILE="$RWE_DIR/defaultenv.sh"
+if [ -f "$DEFAULTENV_FILE" ]; then
+   . "$DEFAULTENV_FILE"
+fi
+
+#
 # Remove the previous paths from PATH to prevent duplicates
 #
 if [ "$GEODE_ADDON_PATH" == "" ]; then

@@ -400,7 +400,7 @@ echo "#" >> $WORKSPACES_HOME/setenv.sh
 #
 # Copy initenv.sh
 #
-cp $BASE_DIR/etc/init/initenv.sh $WORKSPACES_HOME
+cp $BASE_DIR/etc/init/root_initenv.sh $WORKSPACES_HOME/initenv.sh
 
 #
 # Create .addonenv.sh

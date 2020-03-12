@@ -1493,7 +1493,7 @@ function switch_workspace
       fi
       . $GEODE_ADDON_WORKSPACES_HOME/$1/initenv.sh -quiet
    fi
-   cd_workspace
+   cd_workspace $1
 }
 
 # 
