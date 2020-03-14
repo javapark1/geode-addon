@@ -15,7 +15,7 @@ By default, the create_docker command adds two (2) Geode servers (members) in th
 ## Configure the Cluster Environment
 
 ```console
-cd_workspace; cd_docker mydocker
+cd_docker mydocker
 ```
 
 Edit the `.env` file as needed.
@@ -27,14 +27,14 @@ vi .env
 Configure Geode servers by editing `geode-addon/gemfire.properties` and `geode-addon/cache.xml`.
 
 ```console
-vi geode-addon/gemfire.properties
-vi geode-addon/cache.xml
+vi geode-addon/etc/gemfire.properties
+vi geode-addon/etc/cache.xml
 ```
 
 Place your application jar files in the `geode-addon/plugins` directory, which already contains `geode-addon` test jar for running `perf_test`. 
 
 ```console
-ls geode-addon/plugins
+ls geode-addon/plugins/
 ```
 
 ## Start Cluster
