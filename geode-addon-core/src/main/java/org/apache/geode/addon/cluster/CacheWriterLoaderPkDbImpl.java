@@ -135,7 +135,7 @@ import org.hibernate.query.Query;
  *       &lt;property name="connection.driver_class"&gt;com.mysql.cj.jdbc.Driver&lt;/property&gt;
  *       &lt;property name="connection.url"&gt;jdbc:mysql://localhost:3306/nw?useSSL=false&lt;/property&gt;
  *       &lt;property name="connection.username"&gt;root&lt;/property&gt;
- *       &lt;property name="connection.password"&gt;MySql2019&lt;/property&gt;
+ *       &lt;property name="connection.password"&gt;password&lt;/property&gt;
  *       &lt;!-- JDBC connection pool settings ... using built-in test pool --&gt;
  *       &lt;property name="connection.pool_size"&gt;10&lt;/property&gt;
  *       &lt;!-- Select our SQL dialect --&gt;

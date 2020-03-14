@@ -53,7 +53,7 @@ public class HibernatePool {
 	private static final String PROPERTY_HIBERNATE_CONFIG_FILE = "geode-addon.hibernate.config";
 	private static StandardServiceRegistry registry;
 	private static SessionFactory sessionFactory;
-	private static int poolSize = 5;
+	private static int poolSize = 1;
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	// Session is not thread-safe. This map holds Session objects create for
