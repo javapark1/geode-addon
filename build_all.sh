@@ -21,7 +21,8 @@ EOF
    exit
 fi
 
-mvn clean -DskipTests install
+# TSLv1.2 required for older version of macOS
+mvn clean -Dhttps.protocols=TLSv1.2 -DskipTests install
 
 # Get the addon version number
 VERSION=`grep "<version>.*<\/version>" pom.xml` 

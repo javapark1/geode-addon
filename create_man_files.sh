@@ -63,7 +63,6 @@ for i in bin_sh/*; do
 done
 for i in $COMMANDS; do 
    COMMAND_NAME="`basename $i`"
-
    $i -? -man > $TMP_DIR/${COMMAND_NAME}.txt
    MAN_FILE=$MAN_DIR/${COMMAND_NAME}.1
 

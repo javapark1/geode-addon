@@ -465,20 +465,22 @@ fi
 #
 # GEODE_VERSION: Determine the Geode version
 #
-GEOGEODE_VERSIONDE_VERSION=""
+GEODE_VERSION=""
 IS_GEODE_ENTERPRISE=false
 CLUSTER_TYPE="geode"
-GEMFIRE_CHECK=$(ls $GEODE_HOME/Pivotal* 2> /dev/null | wc -l)
-if [ "$GEMFIRE_CHECK" -gt 0 ]; then
-   IS_GEODE_ENTERPRISE=true
-   CLUSTER_TYPE="gemfire"
+if [ "$GEODE_HOME" == "" ]; then
+   CLUSTER_TYPE="geode"
+else
+   GEMFIRE_CHECK=$(ls $GEODE_HOME/Pivotal* 2> /dev/null | wc -l)
+   if [ "$GEMFIRE_CHECK" -gt 0 ]; then
+      IS_GEODE_ENTERPRISE=true
+      CLUSTER_TYPE="gemfire"
+   fi
+   for file in $GEODE_HOME/lib/geode-core-*; do
+      file=${file##*geode\-core\-}
+      GEODE_VERSION=${file%.jar}
+   done
 fi
-
-for file in $GEODE_HOME/lib/geode-core-*; do
-   file=${file##*geode\-core\-}
-   GEODE_VERSION=${file%.jar}
-done
-
 GEODE_MAJOR_VERSION_NUMBER=`expr "$GEODE_VERSION" : '\([0-9]*\)'`
 
 #

@@ -50,7 +50,7 @@ for ((i = 0; i < ${#__PATHS[@]}; i++)); do
    __TOKEN="${__PATHS[$i]}"
    GEODE_ADDON_PATH=$__TOKEN:"$GEODE_ADDON_PATH"
 done
-export GEODE_ADDON_PATH="${GEODE_ADDON_PATH::-1}"
+export GEODE_ADDON_PATH=$(echo $GEODE_ADDON_PATH | sed 's/.$//')
 export PATH=$GEODE_ADDON_PATH:$CLEANED_PATH
 
 #
