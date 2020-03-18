@@ -81,7 +81,7 @@ function isTreeEmpty
 }
 
 #
-# Display the specified tree node
+# Displays the specified tree node
 # @param treeNode            Workspace tree node, i.e., "apps", "clusters", etc.
 # @param isLastNonEmptyNode  "true" if the tree node is the last node in the workspace tree.
 #

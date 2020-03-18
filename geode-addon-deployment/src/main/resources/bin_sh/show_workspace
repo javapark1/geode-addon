@@ -59,19 +59,13 @@ echo "   VM"
 else
 echo "   local"
 fi
-echo ""
-echo "Clusters:"
-showTree "$(getClusters "clusters" $WORKSPACE_ARG)"
-echo ""
-echo "Apps:"
-showTree "$(getClusters "apps" $WORKSPACE_ARG)"
-echo ""
-echo "Pods:"
-showTree "$(getClusters "pods" $WORKSPACE_ARG)"
-echo ""
-echo "Kubernetes:"
-showTree "$(getClusters "k8s" $WORKSPACE_ARG)"
-echo ""
-echo "Docker:"
-showTree "$(getClusters "docker" $WORKSPACE_ARG)"
+NODES="apps clusters docker k8s pods"
+for NODE in $NODES; do
+   ITEMS=$(getClusters "$NODE" $WORKSPACE_ARG)
+   if [ "$ITEMS" != "" ]; then
+      echo ""
+      echo "$NODE"
+      showTree "$ITEMS"
+   fi
+done
 echo ""
