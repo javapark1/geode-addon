@@ -1,6 +1,6 @@
 # Apache Geode/Pivotal GemFire Addon Distribution
 
-**Go to [Quick Start](#Quick-Start)**
+**Go To [Quick Start](#Quick-Start)**
 
 ## Introduction
 
