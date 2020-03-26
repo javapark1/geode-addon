@@ -33,6 +33,7 @@ K8S=
 K8S_SPECIFIED=false
 DOCKER=
 DOCKER_SPECIFIED=false
+HOST=
 COUNT=
 VERSION_SPECIFIED=false
 MAN_SPECIFIED=false
@@ -76,6 +77,7 @@ DOWNLOAD=false
 CONSOLE=false
 LIST=false
 HEADER=false
+CATALOG=false
 TREE=false
 ALL=false
 PID=
@@ -149,6 +151,8 @@ do
    elif [ "$PREV" == "-docker" ]; then
       DOCKER=$i
       DOCKER_SPECIFIED=true
+   elif [ "$PREV" == "-host" ]; then
+      HOST=$i
    elif [ "$PREV" == "-group" ]; then
       GROUP=$i
    elif [ "$PREV" == "-clustergroup" ]; then
@@ -213,6 +217,8 @@ do
       LIST=true
    elif [ "$i" == "-header" ]; then
       HEADER=true
+   elif [ "$i" == "-catalog" ]; then
+      CATALOG=true
    elif [ "$i" == "-console" ]; then
       CONSOLE=true
    elif [ "$i" == "-create-script" ]; then

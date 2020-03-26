@@ -6,10 +6,10 @@
      - locator
     expose:
      - "8080"
-     - "40404"
+     - "${SERVER_PORT}"
      - "1099"
     ports:
-     - "${HOST_PORT}:40404"
+     - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
      - ./geode-addon:/geode-addon/
     command:
@@ -20,10 +20,11 @@
         && \
         gfsh start server \
             --name=`hostname` \
-            --locators=locator[${LOCATOR_PORT}] \
+            --locators=locator[$LOCATOR_PORT] \
             --dir=/run \
-            --max-heap=1G \
-            --hostname-for-clients=${HOSTNAME_FOR_CLIENTS} \
+            --initial-heap=$MIN_HEAP_SIZE \
+            --max-heap=$MAX_HEAP_SIZE \
+            --hostname-for-clients=$HOSTNAME_FOR_CLIENTS \
             --classpath=/geode-addon/lib/*:/geode-addon/plugins/* \
             --cache-xml-file=/geode-addon/etc/cache.xml \
             --J=-Dgeode-addon.server.port=${SERVER_PORT} \

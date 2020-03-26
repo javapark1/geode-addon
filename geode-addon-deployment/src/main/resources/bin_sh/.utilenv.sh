@@ -2113,3 +2113,21 @@ function showTree
       fi
    done
 }
+
+#
+# Returns a list of host IPv4 addresses
+#
+function getHostIPv4List
+{
+   local HOST_IPS=""
+   for i in $(hostname -i); do
+      if [[ $i != 127* ]] && [[ $i != *::* ]]; then
+         if [ "$HOST_IPS" == "" ]; then
+            HOST_IPS="$i"
+         else
+            HOST_IPS="$HOST_IPS $i"
+	 fi
+      fi
+   done
+   echo "$HOST_IPS"
+}

@@ -9,9 +9,10 @@ services:
      - "10334"
      - "1099"
      - "7575"
+     - "7070"
     ports:
      - "1099:1099"
-     - "10334:10334"
+     - "${LOCATOR_PORT}:10334"
      - "7575:7575"
      - "7070:7070"
     command:
@@ -19,6 +20,7 @@ services:
       - -c 
       - |
         gfsh start locator --name=`hostname` --mcast-port=0 \
+            --hostname-for-clients=${HOSTNAME_FOR_CLIENTS} \
         && \
         while true; do
            sleep 10

@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-console -list -header -?"
+   echo "-console -list -header -catalog -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -25,7 +25,7 @@ NAME
    $EXECUTABLE - Show the specified bundle's READEME.md in the browser 
 
 SYNOPSIS
-   $EXECUTABLE [-console] [-list|-header] bundle_file_name
+   $EXECUTABLE [-console] [-list|-header|-catalog] [bundle_file_name]
 
 DESCRIPTION
    Displays the specified bundle's README.md file in the browser by default. If it's
@@ -44,9 +44,13 @@ OPTIONS
              then it displays the README.md file in the browser. If the browser cannot be
              launched then it displays the README.md file on the console instead.
 
+   -catalog
+             Displays the bundle catalog in the browser. If the browser cannot be launched
+             then it lists header information, i.e., the '-header' option is executed.
+
+
    bundle_file_name
-             Bundle file name. List the bundle file names by running the 'install_bundle -list'
-             command.
+             Bundle file name of README.md.
 
 DEFAULT
    $EXECUTABLE bundle_file_name
@@ -58,6 +62,9 @@ EXAMPLES
    To list headers of remote bundles:
       $EXECUTABLE -header
 
+   To view the bundle (or use case) catalog in the browser:
+      $EXECUTABLE -catalog
+
    To view a remote bundle help (READEME.md) in the browser:
       $EXECUTABLE bundle-jet-3.2-cluster-trade.tar.gz
 
@@ -66,6 +73,7 @@ EXAMPLES
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
+
 FILES
    $GEODE_ADDON_WORKSPACE/bundles
              The current workspace bundles directory where locally generated bundles are stored.
@@ -83,8 +91,26 @@ if [ "$1" == "" ]; then
    LIST="true"
 fi
 
+CATALOG_URL="https://github.com/javapark1/geode-addon-bundles/tree/master/Bundle-Catalog.md"
 HELP_URL="https://github.com/javapark1/geode-addon-bundles/tree/master/help"
 RAW_URL="https://raw.githubusercontent.com/javapark1/geode-addon-bundles/master/help"
+
+if [ "$CATALOG" == "true" ]; then
+   LIST="false"
+   HEADER="false"
+   BROWSER_URL="${CATALOG_URL}"
+   if [[ ${OS_NAME} == DARWIN* ]]; then
+      open "$BROWSER_URL"
+   elif [[ ${OS_NAME} == CYGWIN* ]] || [ "$(which cmd.exe)" != "" ]; then
+      cmd.exe /c start "" "$BROWSER_URL"
+   else
+      HEADER="true"
+      echo "(Catalog: $BROWSER_URL)"
+   fi
+   if [ "$HEADER" == "false" ]; then
+      exit
+   fi
+fi
 
 if [ "$LIST" == "true" ] || [ "$HEADER" == "true" ]; then
    TITLE=`curl -sS $BUNDLE_LIST_URL | grep "title=\"bundle-"`
@@ -117,6 +143,7 @@ if [ "$LIST" == "true" ] || [ "$HEADER" == "true" ]; then
       echo "---------------"
    fi
 
+   echo "View catalog (use cases): show_bundle -catalog"
    echo "View bundle instructions: show_bundle bundle_file_name"
    echo " Preview bundle contents: install_bundle -download -preview bundle_file_name"
    echo "          Install bundle: install_bundle -download bundle_file_name"

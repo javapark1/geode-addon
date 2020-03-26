@@ -56,6 +56,7 @@ __geode_addon_complete()
    -?)
       type_list=""
       ;;
+      
    -pod)
       type_list=`getPods`
       ;;
@@ -109,6 +110,12 @@ __geode_addon_complete()
 
    -workspace)
       type_list=`getWorkspaces`
+      ;;
+
+   -host)
+      if [ "$command" == "create_docker" ]; then
+         type_list="$(getHostIPv4List) host.docker.internal"
+      fi
       ;;
 
    -log)
@@ -401,6 +408,11 @@ __command_complete()
       fi
       type_list=`getClusters $__ENV`
       ;;
+   -workspace)
+      if [ "$command" != "create_workspace" ]; then
+         type_list=`getWorkspaces`
+      fi
+      ;;
    -k8s)
       type_list=`getClusters k8s`
       ;;
@@ -414,6 +426,11 @@ __command_complete()
    -workspace)
       type_list=`getWorkspaces`
       ;;
+   -host)
+      if [ "$command" == "create_docker" ]; then
+         type_list="$(getHostIPv4List) host.docker.internal"
+      fi
+      ;;
    -log)
       type_list="data gc locator"
      ;;
@@ -421,7 +438,7 @@ __command_complete()
       type_list="1 2 3 4 5 6 7 8 9"
      ;;
    -port)
-      if [ "$command" == "create_cluster" ]; then
+      if [ "$command" == "create_cluster" ] || [ "$command" == "create_docker" ]; then
          type_list="$DEFAULT_LOCATOR_START_PORT"
       fi
      ;;
