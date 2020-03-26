@@ -139,11 +139,19 @@ fi
 
 if [ "$DOCKER" == "compose" ]; then
 
-   mkdir -p $CLUSTER_DIR/geode-addon/etc
+   #RUN_DIR=$CLUSTER_DIR/geode-addon/run
+   RUN_DIR=/run
    ETC_DIR=$CLUSTER_DIR/geode-addon/etc
    LIB_DIR=$CLUSTER_DIR/geode-addon/lib
+   LOG_DIR=$CLUSTER_DIR/geode-addon/log
+   STATS_DIR=$CLUSTER_DIR/geode-addon/stats
    PLUGINS_DIR=$CLUSTER_DIR/geode-addon/plugins
    DOCKER_DOC="README.md"
+
+   mkdir -p $ETC_DIR
+   mkdir -p $RUN_DIR
+   mkdir -p $STATS_DIR
+   mkdir -p $LOG_DIR
 
    # Copy Docker doc
    cp $BASE_DIR/docker/compose/$DOCKER_DOC $CLUSTER_DIR
@@ -169,22 +177,49 @@ if [ "$DOCKER" == "compose" ]; then
    else
       START_PORT=$DEFAULT_LOCATOR_START_PORT
    fi
+   
+   # Update docker-compose.yaml
    LOCATOR_PORT=$START_PORT
+   HOST_LOCATOR_JMX_PORT=$DEFAULT_LOCATOR_JMX_START_PORT
+   HOST_JMX_MANAGER_HTTP_PORT=$DEFAULT_JMX_MANAGER_HTTP_START_PORT
+   HOST_JMX_MANAGER_PORT=$DEFAULT_JMX_MANAGER_START_PORT
    sed -e "s/\${HOSTNAME_FOR_CLIENTS}/$HOST_IP/g" \
        -e "s/\${CLUSTER_NAME}/$CLUSTER/g" \
        $BASE_DIR/docker/compose/template-env > $CLUSTER_DIR/.env
 
    # Update docker-compose.yaml
-   sed -e "s/\${LOCATOR_PORT}/$LOCATOR_PORT/g" \
+   sed -e "s/\${VERSION}/$GEODE_VERSION/g" \
+       -e "s/\${LOCATOR_PORT}/$LOCATOR_PORT/g" \
+       -e "s/\${HOST_LOCATOR_JMX_PORT}/$HOST_LOCATOR_JMX_PORT/g" \
+       -e "s/\${HOST_JMX_MANAGER_HTTP_PORT}/$HOST_JMX_MANAGER_HTTP_PORT/g" \
+       -e "s/\${HOST_JMX_MANAGER_PORT}/$HOST_JMX_MANAGER_PORT/g" \
        $BASE_DIR/docker/compose/template-docker-compose.yaml > $CLUSTER_DIR/docker-compose.yaml
 
    # Append server services to docker-compose.yaml
    let DIFF_PORT=LOCATOR_PORT-DEFAULT_LOCATOR_START_PORT
    let SERVER_PORT=DEFAULT_MEMBER_START_PORT+DIFF_PORT
+   HTTP_PORT=$DEFAULT_MEMBER_HTTP_START_PORT
+   HOST_JMX_PORT=10991
+   HOST_DEBUG_PORT=$DEFAULT_DEBUG_START_PORT
+   HOST_PROMETHEUS_PORT=$DEFAULT_PROMETHEUS_START_PORT
+   PROMETHEUS_JAR_PATH=`find $BASE_DIR/lib -name jmx_prometheus_javaagent*.jar`
+   PROMETHEUS_JAR=$(basename $PROMETHEUS_JAR_PATH)
    for i in $(seq 1 $COUNT); do   
       SERVER_NAME="server$i"
-      sed -e "s/\${SERVER_NAME}/$SERVER_NAME/g" -e "s/\${SERVER_PORT}/$SERVER_PORT/g" $BASE_DIR/docker/compose/template-server-docker-compose.yaml >> $CLUSTER_DIR/docker-compose.yaml
+      sed -e "s/\${VERSION}/$GEODE_VERSION/g" \
+          -e "s/\${SERVER_NAME}/$SERVER_NAME/g" \
+	  -e "s/\${SERVER_PORT}/$SERVER_PORT/g" \
+	  -e "s/\${HTTP_PORT}/$HTTP_PORT/g" \
+	  -e "s/\${HOST_JMX_PORT}/$HOST_JMX_PORT/g" \
+          -e "s/\${HOST_DEBUG_PORT}/$HOST_DEBUG_PORT/g" \
+          -e "s/\${HOST_PROMETHEUS_PORT}/$HOST_PROMETHEUS_PORT/g" \
+          -e "s/\${PROMETHEUS_JAR}/$PROMETHEUS_JAR/g" \
+	  $BASE_DIR/docker/compose/template-server-docker-compose.yaml >> $CLUSTER_DIR/docker-compose.yaml
       let SERVER_PORT=SERVER_PORT+1
+      let HTTP_PORT=HTTP_PORT+1
+      let HOST_JMX_PORT=HOST_JMX_PORT+1
+      let HOST_DEBUG_PORT=HOST_DEBUG_PORT+1
+      let HOST_PROMETHEUS_PORT=HOST_PROMETHEUS_PORT+1
    done
 
 fi
