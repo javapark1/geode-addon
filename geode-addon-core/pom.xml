@@ -61,18 +61,26 @@
 			<artifactId>log4j-slf4j-impl</artifactId>
 			<version>2.13.0</version>
 		</dependency>
-		
-<!-- 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.11.2</version>
-		</dependency> -->
 
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
 			<version>${spring.version}</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.apache.kafka/connect-api -->
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>connect-api</artifactId>
+			<version>2.4.1</version>
+		</dependency>
+
+		<!-- For domain classes -->
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.9.1</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/junit/junit -->
