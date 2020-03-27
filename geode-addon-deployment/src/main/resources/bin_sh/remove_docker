@@ -7,7 +7,7 @@ EXECUTABLE="`basename $0`"
 
 __options()
 {
-   echo "-app -quiet -?"
+   echo "-cluster -quiet -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -22,64 +22,63 @@ WORKSPACE
    $GEODE_ADDON_WORKSPACE
 
 NAME
-   $EXECUTABLE - Remove the specified app from the current geode-addon workspace
+   $EXECUTABLE - Remove the specified Docker cluster from the current geode-addon workspace
 
 WARNING
-   This command removes the entire app directory including the config and log files
-   only in the local file system. It will NOT remove the app from the remote VM hosts.
+   This command permanently removes the specified Docker cluster directory.
 
 SYNOPSIS
-   $EXECUTABLE -app app_name [-quiet] [-?]
+   $EXECUTABLE -cluster cluster_name [-quiet] [-?]
 
 DESCRIPTION
-   Removes the specified app.
+   Removes the specified Docker cluster.
 
-   -app app_name
-             App name. The app name is required.
+   -cluster cluster_name
+             Docker cluster name. The cluster name is required.
 
    -quiet
              Quiet mode. Supresses the interactive prompt.
 
 DEFAULT
-   $EXECUTABLE -app app_name
+   $EXECUTABLE -cluster cluster_name
 
 SEE ALSO
 EOF
-   printSeeAlsoList "*app*" $EXECUTABLE
+   printSeeAlsoList "*docker*" $EXECUTABLE
    exit
 fi
 
-# Prompt if the app exists
-APP_DIR=$APPS_DIR/$APP
-if [ -d $APP_DIR ]; then
+# Prompt if the docker exists
+CLUSTER_DIR=$DOCKER_DIR/$CLUSTER
+if [ -d $CLUSTER_DIR ]; then
    if [ "$QUIET" == "false" ]; then
       echo "        WORKSPACE: $GEODE_ADDON_WORKSPACE"
-      echo "App to Remove: $APP"
-      echo "   This command removes the entire app including config, log, and data store files."
+      echo "Cluster to Remove: $CLUSTER"
+      echo "   This command permanently removes the specified Docker cluster."
       echo "Do you want to continue?"
-      echo "(Enter 'continue' + Enter to continue the app removal, other keys to abort.)"
+      echo "(Enter 'continue' + Enter to continue the Docker cluster removal, other keys to abort.)"
       read INPUT
       if [ "$INPUT" != "continue" ]; then
-         echo "App removal aborted."
+         echo "Docker cluster removal aborted."
          exit
       fi
    fi
 else
    echo >&2 "----------------------------------------------------------------"
    echo >&2 "WORKSPACE: $GEODE_ADDON_WORKSPACE"
-   echo >&2 "    ERROR: The specified app does not exist: [$APP]. Command aborted."
+   echo >&2 "    ERROR: The specified Docker cluster does not exist: [$CLUSTER]. Command aborted."
    echo >&2 "----------------------------------------------------------------"
    exit 1
 fi
 
-# Remove the app in the local file system
+# Remove the cluster in the local file system
 CURRENT_DIR=`pwd`
-rm -rf $APP_DIR
+rm -rf $CLUSTER_DIR
 
 echo "----------------------------------------------------------------"
-echo "  WORKSPACE: $GEODE_ADDON_WORKSPACE"
-echo "App Removed: $APP"
-echo "    APP_DIR: $APP_DIR"
+echo "             WORKSPACE: $GEODE_ADDON_WORKSPACE"
+echo "Docker Cluster Removed: $CLUSTER"
+echo "    Docker Cluster Dir: $CLUSTER_DIR"
 echo "----------------------------------------------------------------"
 
 if [ "$CURRENT_DIR" != "" ] && [ ! -d "$CURRENT_DIR" ]; then

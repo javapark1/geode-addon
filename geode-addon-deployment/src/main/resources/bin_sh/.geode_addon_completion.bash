@@ -86,9 +86,9 @@ __geode_addon_complete()
      ;;
    
    -cluster)
-      if [ "$second_word" == "create_k8s" ]; then
+      if [ "$second_word" == "create_k8s" ] || [ "$second_word" == "remove_k8s" ]; then
          __ENV="k8s"
-      elif [ "$second_word" == "create_docker" ]; then
+      elif [ "$second_word" == "create_docker" ] || [ "$second_word" == "remove_docker" ]; then
          __ENV="docker"
       else
          __ENV="clusters"
@@ -399,9 +399,9 @@ __command_complete()
       fi
       ;;
    -cluster)
-      if [ "$command" == "create_k8s" ]; then
+      if [ "$command" == "create_k8s" ] || [ "$command" == "remove_k8s" ]; then
          __ENV="k8s"
-      elif [ "$command" == "create_docker" ]; then
+      elif [ "$command" == "create_docker" ] || [ "$command" == "remove_docker" ]; then
          __ENV="docker"
       else
          __ENV="clusters"
