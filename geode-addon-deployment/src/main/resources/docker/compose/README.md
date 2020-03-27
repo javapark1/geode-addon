@@ -105,6 +105,14 @@ server1 | 192.168.128.3(server1:33)<v1>:41000
 server2 | 192.168.128.4(server2:33)<v1>:41000
 ```
 
+## Run Pulse
+
+URL: http://localhost:7070/pulse
+
+## Run Swagger UI
+
+URL: http://localhost:7080/geode/swagger-ui.html
+
 ## Run `perf_test`
 
 You can run `perf_test` as is without modifications.
