@@ -18,6 +18,7 @@ fi
 #
 # Set PATH by removing old paths first to prevent duplicates
 #
+unset __PATHS
 declare -a __PATHS
 let __INDEX=0
 if [ "$GEODE_HOME" != "" ]; then
